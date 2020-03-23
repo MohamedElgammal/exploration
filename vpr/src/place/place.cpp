@@ -567,14 +567,15 @@ void try_place(const t_placer_opts& placer_opts,
 
     move_lim = (int)(annealing_sched.inner_num * pow(cluster_ctx.clb_nlist.blocks().size(), 1.3333));
 
-    //move_generator = std::make_unique<StaticMoveGenerator>(placer_opts.place_static_move_prob);
+    move_generator = std::make_unique<StaticMoveGenerator>(placer_opts.place_static_move_prob);
+    /*
     std::unique_ptr<EpsilonGreedyAgent> karmed_bandit_agent;
-    
+
     const size_t avail_moves = 4;
     karmed_bandit_agent = std::make_unique<EpsilonGreedyAgent>(avail_moves, placer_opts.place_agent_epsilon);
     karmed_bandit_agent->set_step(placer_opts.place_agent_gamma, move_lim);
     move_generator = std::make_unique<SimpleRLMoveGenerator>(karmed_bandit_agent);
-
+    */
     width_fac = placer_opts.place_chan_width;
 
     init_chan(width_fac, chan_width_dist);
@@ -1445,7 +1446,7 @@ static e_move_result try_swap(float t,
      * Passes back the new value of the cost functions.                  */
 
     int type; //move type number
-    
+
     num_ts_called++;
 
     MoveOutcomeStats move_outcome_stats;
@@ -1467,7 +1468,7 @@ static e_move_result try_swap(float t,
     e_create_move create_move_outcome = move_generator.propose_move(blocks_affected
       , rlim, X_coord, Y_coord, num_moves, type, high_fanout_net);
 
-    VTR_LOG("###%d,%d,%d,%d\n",num_moves[0],num_moves[1],num_moves[2],num_moves[3]);
+    //VTR_LOG("###%d,%d,%d,%d\n",num_moves[0],num_moves[1],num_moves[2],num_moves[3]);
     LOG_MOVE_STATS_PROPOSED(t, blocks_affected);
 
     e_move_result move_outcome = ABORTED;
@@ -2975,20 +2976,10 @@ static void update_screen_debug() {
 #endif
 
 static void print_place_status_header() {
-<<<<<<< HEAD
     VTR_LOG("---- ------ ------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------\n");
     VTR_LOG("Tnum   Time       T Av Cost Av BB Cost Av TD Cost     CPD       sTNS     sWNS Ac Rate Std Dev  R lim Crit Exp Tot Moves  Alpha\n");
     VTR_LOG("      (sec)                                          (ns)       (ns)     (ns)                                                 \n");
     VTR_LOG("---- ------ ------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------\n");
-=======
-    //VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------\n");
-    //VTR_LOG("      T Av Cost Av BB Cost Av TD Cost     CPD       sTNS     sWNS Ac Rate Std Dev  R lim Crit Exp Tot Moves  Alpha\n");
-    //VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------\n");
-
-    VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------  ------------- ------------ ------------- ----------- ------------- ------------ ------------- ----------- --------------\n");
-    VTR_LOG("      T Av Cost Av BB Cost Av TD Cost     CPD       sTNS     sWNS Ac Rate Std Dev  R lim Crit Exp Tot Moves  Alpha   pacc_Uniform  pacc_Median  paccWeMedian  pacc_WCent pabo_Uniform  pabo_Median  pabo_WeMedian  pabo_WCent Accepted_moves\n");
-    VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------  ------------- ------------ ------------- ----------- ------------- ------------ ------------- ----------- --------------\n");
->>>>>>> add option for high fanout nets in placement
 }
 
 static void print_place_status(const size_t num_temps,
@@ -3023,7 +3014,6 @@ static void print_place_status(const size_t num_temps,
 
     pretty_print_uint(" ", tot_moves, 9, 3);
 
-<<<<<<< HEAD
     float alpha;
     if (oldt == 0.) {
         alpha = 0.;
@@ -3031,15 +3021,6 @@ static void print_place_status(const size_t num_temps,
         alpha = t / oldt;
     }
     VTR_LOG(" %6.3f\n", alpha);
-=======
-    VTR_LOG(" %6.3f", t / oldt);
-    VTR_LOG(" %13.4f %12.4f %13.4f %11.4f", float(accepted_moves[0])/num_moves[0], float(accepted_moves[1])/num_moves[1],
-            float(accepted_moves[2])/num_moves[2], float(accepted_moves[3])/num_moves[3]);
-
-    VTR_LOG(" %13.4f %12.4f %13.4f %11.4f %14.4f\n", float(aborted_moves[0])/num_moves[0], float(aborted_moves[1])/num_moves[1],
-            float(aborted_moves[2])/num_moves[2], float(aborted_moves[3])/num_moves[3], 
-            float(std::accumulate(accepted_moves.begin(), accepted_moves.end(),0))/tot_moves);    
->>>>>>> add option for high fanout nets in placement
     fflush(stdout);
 }
 

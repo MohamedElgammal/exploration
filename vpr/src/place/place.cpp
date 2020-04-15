@@ -1665,7 +1665,7 @@ static e_move_result try_swap(float t,
     if(delta_c < 0)
         move_generator.process_outcome(-1*delta_c);
     else
-        move_generator.process_outcome(-0.1*delta_c);
+        move_generator.process_outcome(0);
 
 #ifdef VTR_ENABLE_DEBUG_LOGGING
     stop_placement_and_check_breakopints(blocks_affected, f_placer_debug, move_outcome, delta_c, bb_delta_c, timing_delta_c);

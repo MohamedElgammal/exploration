@@ -65,6 +65,12 @@ std::vector<double> num_of_moves (4,0);
 std::vector<double> time_of_moves (4,0);
 #endif
 
+#ifdef VTR_ENABLE_DEBUG_LOGGING
+#include "draw_types.h"
+#include "draw_global.h"
+#include "draw_color.h"
+#endif
+
 using std::max;
 using std::min;
 
@@ -1124,7 +1130,7 @@ static void placement_inner_loop(float t,
                                  std::vector<int>& Y_coord,
                                  std::vector<int>& num_moves,
                                  std::vector<int>& accepted_moves,
-                                 std::vector<int>& aborted_moves) {
+                                 std::vector<int>& aborted_moves){
     int inner_crit_iter_count, inner_iter;
 
     int inner_placement_save_count = 0; //How many times have we dumped placement to a file this temperature?
@@ -1540,7 +1546,6 @@ static e_move_result try_swap(float t,
     num_of_moves[move_generator.get_last()]++;
     time_of_moves[move_generator.get_last()] += duration.count();
 
-    //VTR_LOG("###%d,%d,%d,%d\n",num_moves[0],num_moves[1],num_moves[2],num_moves[3]);
 #endif
     LOG_MOVE_STATS_PROPOSED(t, blocks_affected);
 
@@ -1665,6 +1670,7 @@ static e_move_result try_swap(float t,
 #ifdef VTR_ENABLE_DEBUG_LOGGING
     stop_placement_and_check_breakopints(blocks_affected, f_placer_debug, move_outcome, delta_c, bb_delta_c, timing_delta_c);
 #endif
+
     clear_move_blocks(blocks_affected);
 
     //VTR_ASSERT(check_macro_placement_consistency() == 0);

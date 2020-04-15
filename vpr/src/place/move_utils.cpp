@@ -11,6 +11,7 @@
 #ifdef VTR_ENABLE_DEBUG_LOGGING
 bool f_placer_debug = false;
 #endif
+
 //Records counts of reasons for aborted moves
 static std::map<std::string, size_t> f_move_abort_reasons;
 

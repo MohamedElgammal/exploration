@@ -997,6 +997,7 @@ static void drawplace(ezgl::renderer* g) {
                 //Determine the block color
                 ezgl::color block_color;
                 t_logical_block_type_ptr logical_block_type = nullptr;
+
 #    ifdef VTR_ENABLE_DEBUG_LOGGING
                 if (f_placer_debug) {
                     t_pl_loc curr_loc;
@@ -1043,6 +1044,7 @@ static void drawplace(ezgl::renderer* g) {
                     logical_block_type = pick_best_logical_type(tile_type);
                 }
 #    endif
+
                 g->set_color(block_color);
                 /* Get coords of current sub_tile */
                 ezgl::rectangle abs_clb_bbox = draw_coords->get_absolute_clb_bbox(i, j, k, logical_block_type);

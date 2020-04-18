@@ -61,8 +61,8 @@ std::map<int, std::string> available_move_types = {
 #if 0
 #include <chrono>
 using namespace std::chrono;
-std::vector<double> num_of_moves (4,0);
-std::vector<double> time_of_moves (4,0);
+std::vector<double> num_of_moves (5,0);
+std::vector<double> time_of_moves (5,0);
 #endif
 
 #ifdef VTR_ENABLE_DEBUG_LOGGING
@@ -1035,10 +1035,12 @@ void try_place(const t_placer_opts& placer_opts,
 
     VTR_LOG("update_td_costs: connections %g nets %g sum_nets %g total %g\n", f_update_td_costs_connections_elapsed_sec, f_update_td_costs_nets_elapsed_sec, f_update_td_costs_sum_nets_elapsed_sec, f_update_td_costs_total_elapsed_sec);
 #if 0
+    //measure time of each move type
     VTR_LOG("time of uniform move = %f \n", time_of_moves[0]/num_of_moves[0]);
     VTR_LOG("time of median move = %f \n", time_of_moves[1]/num_of_moves[0]);
     VTR_LOG("time of W median move = %f \n", time_of_moves[2]/num_of_moves[2]);
     VTR_LOG("time of W centroid move = %f \n", time_of_moves[3]/num_of_moves[3]);
+    VTR_LOG("time of feasible region move = %f \n", time_of_moves[4]/num_of_moves[4]);
 #endif
 }
 
@@ -1537,16 +1539,16 @@ static e_move_result try_swap(float t,
 
     //Generate a new move (perturbation) used to explore the space of possible placements
 #if 0
-    auto start = high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
 #endif
     e_create_move create_move_outcome = move_generator.propose_move(blocks_affected
       , rlim, X_coord, Y_coord, num_moves, type, high_fanout_net);
 #if 0
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(stop - start);
-    num_of_moves[move_generator.get_last()]++;
-    time_of_moves[move_generator.get_last()] += duration.count();
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 
+    num_of_moves[type]++;
+    time_of_moves[type] += duration.count();
 #endif
     LOG_MOVE_STATS_PROPOSED(t, blocks_affected);
 

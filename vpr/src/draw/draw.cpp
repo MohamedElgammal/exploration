@@ -52,6 +52,10 @@
 #    include "move_utils.h"
 #endif
 
+#ifdef VTR_ENABLE_DEBUG_LOGGING
+#include "move_utils.h"
+#endif
+
 #ifdef WIN32 /* For runtime tracking in WIN32. The clock() function defined in time.h will *
               * track CPU runtime.														   */
 #    include <time.h>
@@ -997,6 +1001,7 @@ static void drawplace(ezgl::renderer* g) {
                 //Determine the block color
                 ezgl::color block_color;
                 t_logical_block_type_ptr logical_block_type = nullptr;
+<<<<<<< HEAD
 
 #    ifdef VTR_ENABLE_DEBUG_LOGGING
                 if (f_placer_debug) {
@@ -1015,7 +1020,6 @@ static void drawplace(ezgl::renderer* g) {
                         } else {
                             block_color = get_block_type_color(device_ctx.grid[i][j].type);
                             block_color = lighten_color(block_color, EMPTY_BLOCK_LIGHTEN_FACTOR);
-
                             auto tile_type = device_ctx.grid[i][j].type;
                             logical_block_type = pick_best_logical_type(tile_type);
                         }

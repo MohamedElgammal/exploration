@@ -82,6 +82,10 @@ std::map<int,std::string> available_move_types = {
 using std::max;
 using std::min;
 
+#ifdef VTR_ENABLE_DEBUG_LOGGING
+void print_place_statisitics(const float &, const std::vector<int> &, const std::vector<int> &, const std::vector<int> &);
+#endif
+
 /************** Types and defines local to place.c ***************************/
 
 /* Cut off for incremental bounding box updates.                          *
@@ -889,6 +893,10 @@ void try_place(const t_placer_opts& placer_opts,
             sTNS = timing_info->setup_total_negative_slack();
             sWNS = timing_info->setup_worst_negative_slack();
         }
+
+#ifdef VTR_ENABLE_DEBUG_LOGGING
+        print_place_statisitics(t,num_moves,accepted_moves,aborted_moves);
+#endif
 
         print_place_status(num_temps,
                            temperature_timer.elapsed_sec(),
@@ -3220,5 +3228,15 @@ void stop_placement_and_check_breakopints(t_pl_blocks_to_be_moved& blocks_affect
 
         update_screen(ScreenUpdatePriority::MAJOR, msg.c_str(), PLACEMENT, nullptr);
     }
+
+#ifdef VTR_ENABLE_DEBUG_LOGGING
+void print_place_statisitics(const float &t, const std::vector<int> & num_moves, const std::vector<int> & , const std::vector<int> &){
+    FILE* f_ = vtr::fopen("moves_info.txt","a");
+    fprintf(f_, "%7.1e", t);
+    for(size_t i =0; i < num_moves.size(); i++){
+        fprintf(f_,", %d",num_moves[i]);
+    }
+    fprintf(f_,"\n");
+    vtr::fclose(f_);
 }
 #endif

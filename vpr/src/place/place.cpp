@@ -68,7 +68,7 @@ std::map<int,std::string> available_move_types = {
                                 {2,"Weighted Median"},
                                 {3,"Weighted Centroid"},
                                 {4,"Feasible Region"},
-                                {5,"Critical Uniform"} 
+                                {5,"Critical Uniform"}
 };
 #endif
 
@@ -816,7 +816,6 @@ void try_place(const t_placer_opts& placer_opts,
                    aborted_moves,
                    placer_opts.place_high_fanout_net);
 
-    float starting_temp = t;
 
     if (!placer_opts.move_stats_file.empty()) {
         f_move_stats_file = std::unique_ptr<FILE, decltype(&vtr::fclose)>(vtr::fopen(placer_opts.move_stats_file.c_str(), "w"), vtr::fclose);
@@ -1043,6 +1042,7 @@ void try_place(const t_placer_opts& placer_opts,
 
     free_placement_structs(placer_opts);
     free_try_swap_arrays();
+<<<<<<< HEAD
 
     print_timing_stats("Placement Quench", post_quench_timing_stats, pre_quench_timing_stats);
     print_timing_stats("Placement Total ", timing_ctx.stats, pre_place_timing_stats);
@@ -1533,12 +1533,12 @@ static e_move_result try_swap(float t,
     }
 
     //Generate a new move (perturbation) used to explore the space of possible placements
-#if 1 
+#if 0
     auto start = std::chrono::high_resolution_clock::now();
 #endif
     e_create_move create_move_outcome = move_generator.propose_move(blocks_affected
       , rlim, X_coord, Y_coord, num_moves, type, high_fanout_net);
-#if 1
+#if 0
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 
@@ -1661,7 +1661,7 @@ static e_move_result try_swap(float t,
         move_generator.process_outcome(0);
 */
     if(delta_c < 0){
-        float reward = -1*(move_outcome_stats.delta_cost_norm) -0.5*((1-timing_bb_factor)*move_outcome_stats.delta_timing_cost_norm + timing_bb_factor *  move_outcome_stats.delta_bb_cost_norm); 
+        float reward = -1*(move_outcome_stats.delta_cost_norm) -0.5*((1-timing_bb_factor)*move_outcome_stats.delta_timing_cost_norm + timing_bb_factor *  move_outcome_stats.delta_bb_cost_norm);
         move_generator.process_outcome(reward);
     }
     else

@@ -63,13 +63,13 @@ std::vector<double> time_of_moves (7,0);
 #include "draw_color.h"
 //map of the available move types and their corresponding type number
 std::map<int,std::string> available_move_types = {
-                                {0,"Uniform"},
-                                {1,"Median"},
-                                {2,"Weighted Median"},
-                                {3,"Weighted Centroid"},
-                                {4,"Feasible Region"},
-                                {5,"Critical Uniform"},
-                                {6,"Centroid"}
+        {0,"Uniform"},
+        {1,"Median"},
+        {2,"Weighted Median"},
+        {3,"Weighted Centroid"},
+        {4,"Feasible Region"},
+        {5,"Critical Uniform"},
+        {6,"Centroid"}
 };
 #endif
 
@@ -112,32 +112,34 @@ void print_place_statisitics(const float &, const std::vector<int> &, const std:
  * scratch using a very simple routine to allow checks of the other       *
  * costs.                                                                 */
 enum e_cost_methods {
-    NORMAL,
-    CHECK
+        NORMAL,
+        CHECK
 };
 
 struct t_placer_statistics {
-    double av_cost, av_bb_cost, av_timing_cost,
-        sum_of_squares;
-    int success_sum;
+        double av_cost, av_bb_cost, av_timing_cost,
+               sum_of_squares;
+        int success_sum;
 };
 
 struct t_placer_costs {
-    //Although we do nost cost calculations with float's we
-    //use doubles for the accumulated costs to avoid round-off,
-    //particularly on large designs where the magnitude of a single
-    //move's delta cost is small compared to the overall cost.
-    double cost;
-    double bb_cost;
-    double timing_cost;
+        //Although we do nost cost calculations with float's we
+        //use doubles for the accumulated costs to avoid round-off,
+        //particularly on large designs where the magnitude of a single
+        //move's delta cost is small compared to the overall cost.
+        double cost;
+        double bb_cost;
+        double timing_cost;
 };
 
 struct t_placer_prev_inverse_costs {
-    double bb_cost;
-    double timing_cost;
+        double bb_cost;
+        double timing_cost;
 };
 
 constexpr float INVALID_DELAY = std::numeric_limits<float>::quiet_NaN();
+
+int dm_rlim;
 
 constexpr double MAX_INV_TIMING_COST = 1.e9;
 /* Stops inverse timing cost from going to infinity with very lax timing constraints,
@@ -170,8 +172,8 @@ static vtr::vector<ClusterNetId, char> bb_updated_before;
  */
 static ClbNetPinsMatrix<float> connection_delay;          //Delays based on commited block positions
 static ClbNetPinsMatrix<float> proposed_connection_delay; //Delays for proposed block positions (only
-                                                          // for connections effected by move, otherwise
-                                                          // INVALID_DELAY)
+// for connections effected by move, otherwise
+// INVALID_DELAY)
 
 /*
  * Timing cost of connections (i.e. criticality * delay).
@@ -179,18 +181,18 @@ static ClbNetPinsMatrix<float> proposed_connection_delay; //Delays for proposed 
  */
 static PlacerTimingCosts connection_timing_cost;                 //Costs of commited block positions
 static ClbNetPinsMatrix<double> proposed_connection_timing_cost; //Costs for proposed block positions
-                                                                 // (only for connectsion effected by
-                                                                 // move, otherwise INVALID_DELAY)
+// (only for connectsion effected by
+// move, otherwise INVALID_DELAY)
 
 /*
  * Timing cost of nets (i.e. sum of criticality * delay for each net sink/connection).
  * Index ranges: [0..cluster_ctx.clb_nlist.nets().size()-1]
  */
 static vtr::vector<ClusterNetId, double> net_timing_cost; //Like connection_timing_cost, but summed
-                                                          // accross net pins. Used to allow more
-                                                          // efficient recalculation of timing cost
-                                                          // if only a sub-set of nets are changed
-                                                          // while maintaining numeric stability.
+// accross net pins. Used to allow more
+// efficient recalculation of timing cost
+// if only a sub-set of nets are changed
+// while maintaining numeric stability.
 
 /* [0..cluster_ctx.clb_nlist.nets().size()-1].  Store the bounding box coordinates and the number of    *
  * blocks on each of a net's bounding box (to allow efficient updates),      *
@@ -228,11 +230,11 @@ static int num_ts_called = 0;
  * for higher fanout nets. Each entry is the correction factor for the *
  * fanout index-1                                                      */
 static const float cross_count[50] = {/* [0..49] */ 1.0, 1.0, 1.0, 1.0828, 1.1536, 1.2206, 1.2823, 1.3385, 1.3991, 1.4493, 1.4974,
-                                      1.5455, 1.5937, 1.6418, 1.6899, 1.7304, 1.7709, 1.8114, 1.8519, 1.8924,
-                                      1.9288, 1.9652, 2.0015, 2.0379, 2.0743, 2.1061, 2.1379, 2.1698, 2.2016,
-                                      2.2334, 2.2646, 2.2958, 2.3271, 2.3583, 2.3895, 2.4187, 2.4479, 2.4772,
-                                      2.5064, 2.5356, 2.5610, 2.5864, 2.6117, 2.6371, 2.6625, 2.6887, 2.7148,
-                                      2.7410, 2.7671, 2.7933};
+        1.5455, 1.5937, 1.6418, 1.6899, 1.7304, 1.7709, 1.8114, 1.8519, 1.8924,
+        1.9288, 1.9652, 2.0015, 2.0379, 2.0743, 2.1061, 2.1379, 2.1698, 2.2016,
+        2.2334, 2.2646, 2.2958, 2.3271, 2.3583, 2.3895, 2.4187, 2.4479, 2.4772,
+        2.5064, 2.5356, 2.5610, 2.5864, 2.6117, 2.6371, 2.6625, 2.6887, 2.7148,
+        2.7410, 2.7671, 2.7933};
 
 static float f_update_td_costs_connections_elapsed_sec = 0.;
 static float f_update_td_costs_nets_elapsed_sec = 0.;
@@ -244,62 +246,62 @@ std::unique_ptr<FILE, decltype(&vtr::fclose)> f_move_stats_file(nullptr, vtr::fc
 #if 0
 #    define LOG_MOVE_STATS_HEADER()                               \
         do {                                                      \
-            if (f_move_stats_file) {                              \
-                fprintf(f_move_stats_file.get(),                  \
-                        "temp,from_blk,to_blk,from_type,to_type," \
-                        "blk_count,"                              \
-                        "delta_cost,delta_bb_cost,delta_td_cost," \
-                        "outcome,reason\n");                      \
-            }                                                     \
+                if (f_move_stats_file) {                              \
+                        fprintf(f_move_stats_file.get(),                  \
+                                        "temp,from_blk,to_blk,from_type,to_type," \
+                                        "blk_count,"                              \
+                                        "delta_cost,delta_bb_cost,delta_td_cost," \
+                                        "outcome,reason\n");                      \
+                }                                                     \
         } while (false)
 
 #    define LOG_MOVE_STATS_PROPOSED(t, affected_blocks)                                        \
         do {                                                                                   \
-            if (f_move_stats_file) {                                                           \
-                auto& place_ctx = g_vpr_ctx.placement();                                       \
-                auto& cluster_ctx = g_vpr_ctx.clustering();                                    \
-                ClusterBlockId b_from = affected_blocks.moved_blocks[0].block_num;             \
-                                                                                               \
-                t_pl_loc to = affected_blocks.moved_blocks[0].new_loc;                         \
-                ClusterBlockId b_to = place_ctx.grid_blocks[to.x][to.y].blocks[to.sub_tile];   \
-                                                                                               \
-                t_logical_block_type_ptr from_type = cluster_ctx.clb_nlist.block_type(b_from); \
-                t_logical_block_type_ptr to_type = nullptr;                                    \
-                if (b_to) {                                                                    \
-                    to_type = cluster_ctx.clb_nlist.block_type(b_to);                          \
-                }                                                                              \
-                                                                                               \
-                fprintf(f_move_stats_file.get(),                                               \
-                        "%g,"                                                                  \
-                        "%d,%d,"                                                               \
-                        "%s,%s,"                                                               \
-                        "%d,",                                                                 \
-                        t,                                                                     \
-                        int(size_t(b_from)), int(size_t(b_to)),                                \
-                        from_type->name, (to_type ? to_type->name : "EMPTY"),                  \
-                        affected_blocks.num_moved_blocks);                                     \
-            }                                                                                  \
+                if (f_move_stats_file) {                                                           \
+                        auto& place_ctx = g_vpr_ctx.placement();                                       \
+                        auto& cluster_ctx = g_vpr_ctx.clustering();                                    \
+                        ClusterBlockId b_from = affected_blocks.moved_blocks[0].block_num;             \
+                        \
+                        t_pl_loc to = affected_blocks.moved_blocks[0].new_loc;                         \
+                        ClusterBlockId b_to = place_ctx.grid_blocks[to.x][to.y].blocks[to.sub_tile];   \
+                        \
+                        t_logical_block_type_ptr from_type = cluster_ctx.clb_nlist.block_type(b_from); \
+                        t_logical_block_type_ptr to_type = nullptr;                                    \
+                        if (b_to) {                                                                    \
+                                to_type = cluster_ctx.clb_nlist.block_type(b_to);                          \
+                        }                                                                              \
+                        \
+                        fprintf(f_move_stats_file.get(),                                               \
+                                        "%g,"                                                                  \
+                                        "%d,%d,"                                                               \
+                                        "%s,%s,"                                                               \
+                                        "%d,",                                                                 \
+                                        t,                                                                     \
+                                        int(size_t(b_from)), int(size_t(b_to)),                                \
+                                        from_type->name, (to_type ? to_type->name : "EMPTY"),                  \
+                                        affected_blocks.num_moved_blocks);                                     \
+                }                                                                                  \
         } while (false)
 
 #    define LOG_MOVE_STATS_OUTCOME(delta_cost, delta_bb_cost, delta_td_cost, \
-                                   outcome, reason)                          \
-        do {                                                                 \
-            if (f_move_stats_file) {                                         \
+                outcome, reason)                          \
+do {                                                                 \
+        if (f_move_stats_file) {                                         \
                 fprintf(f_move_stats_file.get(),                             \
-                        "%g,%g,%g,"                                          \
-                        "%s,%s\n",                                           \
-                        delta_cost, delta_bb_cost, delta_td_cost,            \
-                        outcome, reason);                                    \
-            }                                                                \
-        } while (false)
+                                "%g,%g,%g,"                                          \
+                                "%s,%s\n",                                           \
+                                delta_cost, delta_bb_cost, delta_td_cost,            \
+                                outcome, reason);                                    \
+        }                                                                \
+} while (false)
 
 #else
 
 #    define LOG_MOVE_STATS_HEADER()                      \
         do {                                             \
-            fprintf(f_move_stats_file.get(),             \
-                    "VTR_ENABLE_DEBUG_LOGGING disabled " \
-                    "-- No move stats recorded\n");      \
+                fprintf(f_move_stats_file.get(),             \
+                                "VTR_ENABLE_DEBUG_LOGGING disabled " \
+                                "-- No move stats recorded\n");      \
         } while (false)
 
 #    define LOG_MOVE_STATS_PROPOSED(t, blocks_affected) \
@@ -307,9 +309,9 @@ std::unique_ptr<FILE, decltype(&vtr::fclose)> f_move_stats_file(nullptr, vtr::fc
         } while (false)
 
 #    define LOG_MOVE_STATS_OUTCOME(delta_cost, delta_bb_cost, delta_td_cost, \
-                                   outcome, reason)                          \
-        do {                                                                 \
-        } while (false)
+                outcome, reason)                          \
+do {                                                                 \
+} while (false)
 
 #endif
 
@@ -319,9 +321,9 @@ static void print_clb_placement(const char* fname);
 #endif
 
 static void alloc_and_load_placement_structs(float place_cost_exp,
-                                             const t_placer_opts& placer_opts,
-                                             t_direct_inf* directs,
-                                             int num_directs);
+                const t_placer_opts& placer_opts,
+                t_direct_inf* directs,
+                int num_directs);
 
 static void alloc_and_load_try_swap_structs();
 static void free_try_swap_structs();
@@ -338,57 +340,57 @@ static void update_move_nets(int num_nets_affected);
 static void reset_move_nets(int num_nets_affected);
 
 static e_move_result try_swap(float t,
-                              t_placer_costs* costs,
-                              t_placer_prev_inverse_costs* prev_inverse_costs,
-                              float rlim,
-                              MoveGenerator& move_generator,
-                              TimingInfo* timing_info,
-                              ClusteredPinTimingInvalidator* pin_timing_invalidator,
-                              t_pl_blocks_to_be_moved& blocks_affected,
-                              const PlaceDelayModel* delay_model,
-                              const PlacerCriticalities* criticalities,
-                              float rlim_escape_fraction,
-                              enum e_place_algorithm place_algorithm,
-                              float timing_tradeoff,
-                              std::vector<int>& X_coord,
-                              std::vector<int>& Y_coord,
-                              std::vector<int>& num_moves,
-                              std::vector<int>& accepted_moves,
-                              std::vector<int>& aborted_moves,
-                              int high_fanout_net,
-                              float timing_bb_factor);
+                t_placer_costs* costs,
+                t_placer_prev_inverse_costs* prev_inverse_costs,
+                float rlim,
+                MoveGenerator& move_generator,
+                TimingInfo* timing_info,
+                ClusteredPinTimingInvalidator* pin_timing_invalidator,
+                t_pl_blocks_to_be_moved& blocks_affected,
+                const PlaceDelayModel* delay_model,
+                const PlacerCriticalities* criticalities,
+                float rlim_escape_fraction,
+                enum e_place_algorithm place_algorithm,
+                float timing_tradeoff,
+                std::vector<int>& X_coord,
+                std::vector<int>& Y_coord,
+                std::vector<int>& num_moves,
+                std::vector<int>& accepted_moves,
+                std::vector<int>& aborted_moves,
+                int high_fanout_net,
+                float timing_bb_factor);
 
 static void check_place(const t_placer_costs& costs,
-                        const PlaceDelayModel* delay_model,
-                        const PlacerCriticalities* criticalities,
-                        enum e_place_algorithm place_algorithm);
+                const PlaceDelayModel* delay_model,
+                const PlacerCriticalities* criticalities,
+                enum e_place_algorithm place_algorithm);
 
 static int check_placement_costs(const t_placer_costs& costs,
-                                 const PlaceDelayModel* delay_model,
-                                 const PlacerCriticalities* criticalities,
-                                 enum e_place_algorithm place_algorithm);
+                const PlaceDelayModel* delay_model,
+                const PlacerCriticalities* criticalities,
+                enum e_place_algorithm place_algorithm);
 static int check_placement_consistency();
 static int check_block_placement_consistency();
 static int check_macro_placement_consistency();
 
 static float starting_t(t_placer_costs* costs,
-                        t_placer_prev_inverse_costs* prev_inverse_costs,
-                        t_annealing_sched annealing_sched,
-                        int max_moves,
-                        float rlim,
-                        const PlaceDelayModel* delay_model,
-                        const PlacerCriticalities* criticalities,
-                        TimingInfo* timing_info,
-                        MoveGenerator& move_generator,
-                        ClusteredPinTimingInvalidator* pin_timing_invalidator,
-                        t_pl_blocks_to_be_moved& blocks_affected,
-                        const t_placer_opts& placer_opts,
-                        std::vector<int>& X_coord,
-                        std::vector<int>& Y_coord,
-                        std::vector<int>& num_moves,
-                        std::vector<int>& accepted_moves,
-                        std::vector<int>& aborted_moves,
-                        int high_fanout_net);
+                t_placer_prev_inverse_costs* prev_inverse_costs,
+                t_annealing_sched annealing_sched,
+                int max_moves,
+                float rlim,
+                const PlaceDelayModel* delay_model,
+                const PlacerCriticalities* criticalities,
+                TimingInfo* timing_info,
+                MoveGenerator& move_generator,
+                ClusteredPinTimingInvalidator* pin_timing_invalidator,
+                t_pl_blocks_to_be_moved& blocks_affected,
+                const t_placer_opts& placer_opts,
+                std::vector<int>& X_coord,
+                std::vector<int>& Y_coord,
+                std::vector<int>& num_moves,
+                std::vector<int>& accepted_moves,
+                std::vector<int>& aborted_moves,
+                int high_fanout_net);
 
 static void update_t(float* t, float rlim, float success_rat, t_annealing_sched annealing_sched);
 
@@ -411,8 +413,8 @@ static void commit_td_cost(const t_pl_blocks_to_be_moved& blocks_affected);
 static void revert_td_cost(const t_pl_blocks_to_be_moved& blocks_affected);
 
 static void invalidate_affected_connection_delays(const t_pl_blocks_to_be_moved& blocks_affected,
-                                                  ClusteredPinTimingInvalidator* pin_tedges_invalidator,
-                                                  TimingInfo* timing_info);
+                ClusteredPinTimingInvalidator* pin_tedges_invalidator,
+                TimingInfo* timing_info);
 
 static bool driven_by_moved_block(const ClusterNetId net, const t_pl_blocks_to_be_moved& blocks_affected);
 
@@ -431,25 +433,25 @@ static void get_non_updateable_bb(ClusterNetId net_id, t_bb* bb_coord_new);
 static void update_bb(ClusterNetId net_id, t_bb* bb_coord_new, t_bb* bb_edge_new, int xold, int yold, int xnew, int ynew);
 
 static int find_affected_nets_and_update_costs(e_place_algorithm place_algorithm,
-                                               const PlaceDelayModel* delay_model,
-                                               const PlacerCriticalities* criticalities,
-                                               t_pl_blocks_to_be_moved& blocks_affected,
-                                               double& bb_delta_c,
-                                               double& timing_delta_c);
+                const PlaceDelayModel* delay_model,
+                const PlacerCriticalities* criticalities,
+                t_pl_blocks_to_be_moved& blocks_affected,
+                double& bb_delta_c,
+                double& timing_delta_c);
 
 static void record_affected_net(const ClusterNetId net, int& num_affected_nets);
 
 static void update_net_bb(const ClusterNetId net,
-                          const t_pl_blocks_to_be_moved& blocks_affected,
-                          int iblk,
-                          const ClusterBlockId blk,
-                          const ClusterPinId blk_pin);
+                const t_pl_blocks_to_be_moved& blocks_affected,
+                int iblk,
+                const ClusterBlockId blk,
+                const ClusterPinId blk_pin);
 static void update_td_delta_costs(const PlaceDelayModel* delay_model,
-                                  const PlacerCriticalities& criticalities,
-                                  const ClusterNetId net,
-                                  const ClusterPinId pin,
-                                  t_pl_blocks_to_be_moved& blocks_affected,
-                                  double& delta_timing_cost);
+                const PlacerCriticalities& criticalities,
+                const ClusterNetId net,
+                const ClusterPinId pin,
+                t_pl_blocks_to_be_moved& blocks_affected,
+                double& delta_timing_cost);
 
 static double get_net_cost(ClusterNetId net_id, t_bb* bb_ptr);
 
@@ -460,98 +462,100 @@ static double get_net_wirelength_estimate(ClusterNetId net_id, t_bb* bbptr);
 static void free_try_swap_arrays();
 
 static void outer_loop_recompute_criticalities(const t_placer_opts& placer_opts,
-                                               t_placer_costs* costs,
-                                               t_placer_prev_inverse_costs* prev_inverse_costs,
-                                               int num_connections,
-                                               float crit_exponent,
-                                               int* outer_crit_iter_count,
-                                               const PlaceDelayModel* delay_model,
-                                               PlacerCriticalities* criticalities,
-                                               ClusteredPinTimingInvalidator* pin_timing_invalidator,
-                                               SetupTimingInfo* timing_info);
+                t_placer_costs* costs,
+                t_placer_prev_inverse_costs* prev_inverse_costs,
+                int num_connections,
+                float crit_exponent,
+                int* outer_crit_iter_count,
+                const PlaceDelayModel* delay_model,
+                PlacerCriticalities* criticalities,
+                ClusteredPinTimingInvalidator* pin_timing_invalidator,
+                SetupTimingInfo* timing_info);
 
 static void recompute_criticalities(float crit_exponent,
-                                    const PlaceDelayModel* delay_model,
-                                    PlacerCriticalities* criticalities,
-                                    ClusteredPinTimingInvalidator* pin_timing_invalidator,
-                                    SetupTimingInfo* timing_info,
-                                    t_placer_costs* costs);
+                const PlaceDelayModel* delay_model,
+                PlacerCriticalities* criticalities,
+                ClusteredPinTimingInvalidator* pin_timing_invalidator,
+                SetupTimingInfo* timing_info,
+                t_placer_costs* costs);
 
 static void placement_inner_loop(float t,
-                                 int temp_num,
-                                 float rlim,
-                                 const t_placer_opts& placer_opts,
-                                 int move_lim,
-                                 float crit_exponent,
-                                 int inner_recompute_limit,
-                                 t_placer_statistics* stats,
-                                 t_placer_costs* costs,
-                                 t_placer_prev_inverse_costs* prev_inverse_costs,
-                                 int* moves_since_cost_recompute,
-                                 ClusteredPinTimingInvalidator* pin_timing_invalidator,
-                                 const PlaceDelayModel* delay_model,
-                                 PlacerCriticalities* criticalities,
-                                 MoveGenerator& move_generator,
-                                 t_pl_blocks_to_be_moved& blocks_affected,
-                                 SetupTimingInfo& timing_info,
-                                 std::vector<int>& X_coord,
-                                 std::vector<int>& Y_coord,
-                                 std::vector<int>& num_moves,
-                                 std::vector<int>& accepted_moves,
-                                 std::vector<int>& aborted_moves,
-                                 float timing_bb_factor);
+                int temp_num,
+                float rlim,
+                const t_placer_opts& placer_opts,
+                int move_lim,
+                float crit_exponent,
+                int inner_recompute_limit,
+                t_placer_statistics* stats,
+                t_placer_costs* costs,
+                t_placer_prev_inverse_costs* prev_inverse_costs,
+                int* moves_since_cost_recompute,
+                ClusteredPinTimingInvalidator* pin_timing_invalidator,
+                const PlaceDelayModel* delay_model,
+                PlacerCriticalities* criticalities,
+                MoveGenerator& move_generator,
+                t_pl_blocks_to_be_moved& blocks_affected,
+                SetupTimingInfo& timing_info,
+                std::vector<int>& X_coord,
+                std::vector<int>& Y_coord,
+                std::vector<int>& num_moves,
+                std::vector<int>& accepted_moves,
+                std::vector<int>& aborted_moves,
+                float timing_bb_factor);
 
 static void recompute_costs_from_scratch(const t_placer_opts& placer_opts,
-                                         const PlaceDelayModel* delay_model,
-                                         const PlacerCriticalities* criticalities,
-                                         t_placer_costs* costs);
+                const PlaceDelayModel* delay_model,
+                const PlacerCriticalities* criticalities,
+                t_placer_costs* costs);
 
 static void calc_placer_stats(t_placer_statistics& stats, float& success_rat, double& std_dev, const t_placer_costs& costs, const int move_lim);
 
 static void generate_post_place_timing_reports(const t_placer_opts& placer_opts,
-                                               const t_analysis_opts& analysis_opts,
-                                               const SetupTimingInfo& timing_info,
-                                               const PlacementDelayCalculator& delay_calc);
+                const t_analysis_opts& analysis_opts,
+                const SetupTimingInfo& timing_info,
+                const PlacementDelayCalculator& delay_calc);
 
 static void print_place_status_header();
 static void print_place_status(const size_t num_temps,
-                               const float elapsed_sec,
-                               const float t,
-                               const float oldt,
-                               const t_placer_statistics& stats,
-                               const float cpd,
-                               const float sTNS,
-                               const float sWNS,
-                               const float acc_rate,
-                               const float std_dev,
-                               const float rlim,
-                               const float crit_exponent,
-                               size_t tot_moves,
-                               const std::vector<int>& num_moves,
-                               const std::vector<int>& accepted_moves,
-                               const std::vector<int>& aborted_moves);
+                const float elapsed_sec,
+                const float t,
+                const float oldt,
+                const t_placer_statistics& stats,
+                const float cpd,
+                const float sTNS,
+                const float sWNS,
+                const float acc_rate,
+                const float std_dev,
+                const float rlim,
+                const float crit_exponent,
+                size_t tot_moves,
+                const std::vector<int>& num_moves,
+                const std::vector<int>& accepted_moves,
+                const std::vector<int>& aborted_moves);
 static void print_resources_utilization();
 
 /*****************************************************************************/
 void try_place(const t_placer_opts& placer_opts,
-               t_annealing_sched annealing_sched,
-               const t_router_opts& router_opts,
-               const t_analysis_opts& analysis_opts,
-               t_chan_width_dist chan_width_dist,
-               t_det_routing_arch* det_routing_arch,
-               std::vector<t_segment_inf>& segment_inf,
-               t_direct_inf* directs,
-               int num_directs) {
-    /* Does almost all the work of placing a circuit.  Width_fac gives the   *
-     * width of the widest channel.  Place_cost_exp says what exponent the   *
-     * width should be taken to when calculating costs.  This allows a       *
-     * greater bias for anisotropic architectures.                           */
-    auto& device_ctx = g_vpr_ctx.device();
-    auto& atom_ctx = g_vpr_ctx.atom();
-    auto& cluster_ctx = g_vpr_ctx.clustering();
+                t_annealing_sched annealing_sched,
+                const t_router_opts& router_opts,
+                const t_analysis_opts& analysis_opts,
+                t_chan_width_dist chan_width_dist,
+                t_det_routing_arch* det_routing_arch,
+                std::vector<t_segment_inf>& segment_inf,
+                t_direct_inf* directs,
+                int num_directs) {
+        /* Does almost all the work of placing a circuit.  Width_fac gives the   *
+         * width of the widest channel.  Place_cost_exp says what exponent the   *
+         * width should be taken to when calculating costs.  This allows a       *
+         * greater bias for anisotropic architectures.                           */
+        auto& device_ctx = g_vpr_ctx.device();
+        auto& atom_ctx = g_vpr_ctx.atom();
+        auto& cluster_ctx = g_vpr_ctx.clustering();
 
-    auto& timing_ctx = g_vpr_ctx.timing();
-    auto pre_place_timing_stats = timing_ctx.stats;
+        auto& timing_ctx = g_vpr_ctx.timing();
+        auto pre_place_timing_stats = timing_ctx.stats;
+
+    dm_rlim = placer_opts.place_dm_rlim;
 
     int tot_iter, move_lim = 0, moves_since_cost_recompute, width_fac, num_connections,
                   outer_crit_iter_count, inner_recompute_limit;

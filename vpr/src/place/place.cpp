@@ -133,6 +133,8 @@ struct t_placer_prev_inverse_costs {
 
 constexpr float INVALID_DELAY = std::numeric_limits<float>::quiet_NaN();
 
+int dm_rlim;
+
 constexpr double MAX_INV_TIMING_COST = 1.e9;
 /* Stops inverse timing cost from going to infinity with very lax timing constraints,
  * which avoids multiplying by a gigantic prev_inverse.timing_cost when auto-normalizing.
@@ -486,7 +488,7 @@ void try_place(const t_placer_opts& placer_opts,
      * width of the widest channel.  Place_cost_exp says what exponent the   *
      * width should be taken to when calculating costs.  This allows a       *
      * greater bias for anisotropic architectures.                           */
-
+    dm_rlim = placer_opts.place_dm_rlim;
     int tot_iter, move_lim = 0, moves_since_cost_recompute, width_fac, num_connections,
                   outer_crit_iter_count, inner_recompute_limit;
     float t, success_rat, rlim,

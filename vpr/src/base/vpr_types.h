@@ -873,6 +873,11 @@ enum e_pad_loc_type {
     RANDOM
 };
 
+enum e_agent_algorithm{
+    E_GREEDY,
+    SOFTMAX
+};
+
 enum e_place_effort_scaling {
     CIRCUIT,       ///<Effort scales based on circuit size only
     DEVICE_CIRCUIT ///<Effort scales based on both circuit and device size
@@ -905,6 +910,7 @@ enum class e_place_delta_delay_algorithm {
 
 struct t_placer_opts {
     enum e_place_algorithm place_algorithm;
+    enum e_agent_algorithm place_agent_algorithm;
     float timing_tradeoff;
     float place_cost_exp;
     int place_chan_width;

@@ -13,6 +13,7 @@ extern bool f_placer_debug;
 #endif
 
 extern int dm_rlim;
+extern e_agent_algorithm agent_algorithm;
 
 /* This is for the placement swap routines. A swap attempt could be       *
  * rejected, accepted or aborted (due to the limitations placed on the    *

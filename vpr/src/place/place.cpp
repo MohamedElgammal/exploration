@@ -171,7 +171,7 @@ constexpr float INVALID_DELAY = std::numeric_limits<float>::quiet_NaN();
 
 int dm_rlim;
 e_agent_algorithm agent_algorithm;
-
+int reward_num;
 
 constexpr double MAX_INV_TIMING_COST = 1.e9;
 /* Stops inverse timing cost from going to infinity with very lax timing constraints,
@@ -595,6 +595,7 @@ void try_place(const t_placer_opts& placer_opts,
         auto pre_place_timing_stats = timing_ctx.stats;
 
     dm_rlim = placer_opts.place_dm_rlim;
+    reward_num = placer_opts.place_reward_num;
     agent_algorithm = placer_opts.place_agent_algorithm;
 
     int tot_iter, moves_since_cost_recompute, width_fac, num_connections,
@@ -1722,12 +1723,25 @@ static e_move_result try_swap(float t,
     else
         move_generator.process_outcome(0);
 */
-    if(delta_c < 0){
-        float reward = -1*(move_outcome_stats.delta_cost_norm) -0.5*((1-timing_bb_factor)*move_outcome_stats.delta_timing_cost_norm + timing_bb_factor *  move_outcome_stats.delta_bb_cost_norm);
-        move_generator.process_outcome(reward);
+    if(reward_num == 0){
+        move_generator.process_outcome(-1*delta_c);
+        
     }
-    else
-        move_generator.process_outcome(0);
+    else if(reward_num == 2 || reward_num == 1){
+        if(delta_c < 0){
+            move_generator.process_outcome(-1*delta_c);
+        }
+        else
+            move_generator.process_outcome(0);
+    }
+    else{
+        if(delta_c < 0){
+            float reward = -1*(move_outcome_stats.delta_cost_norm) -0.5*((1-timing_bb_factor)*move_outcome_stats.delta_timing_cost_norm + timing_bb_factor *  move_outcome_stats.delta_bb_cost_norm);
+         move_generator.process_outcome(reward);
+        }
+        else
+            move_generator.process_outcome(0);
+    }
 
 #ifdef VTR_ENABLE_DEBUG_LOGGING
     stop_placement_and_check_breakopints(blocks_affected, f_placer_debug, move_outcome, delta_c, bb_delta_c, timing_delta_c);

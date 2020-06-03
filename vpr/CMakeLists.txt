@@ -117,7 +117,12 @@ if (VPR_USES_IPO)
     set_target_properties(vpr PROPERTIES LINK_FLAGS ${IPO_LINK_WARN_SUPRESS_FLAGS})
 endif()
 
-
+# Gurobi linking TODO: make it automated 
+set (GUROBI_PREFIX "$ENV{GUROBI_HOME}")
+message("-- Found Gurobi. Gurobi prefix is: ${GUROBI_PREFIX}")
+include_directories (SYSTEM "${GUROBI_PREFIX}/include") 
+target_link_libraries(vpr ${GUROBI_PREFIX}/lib/libgurobi_g++5.2.a
+                          ${GUROBI_PREFIX}/lib/libgurobi90.so)
 
 #
 # Profile Guilded Optimization Configuration

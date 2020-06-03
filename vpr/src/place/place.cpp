@@ -38,6 +38,10 @@
 #include "static_move_generator.h"
 #include "simpleRL_move_generator.h"
 
+#ifdef TEST_ILP_MOVE
+#include "ilp_move.h"
+#endif
+
 #include "PlacementDelayCalculator.h"
 #include "VprTimingGraphResolver.h"
 #include "timing_util.h"
@@ -490,7 +494,124 @@ void try_place(const t_placer_opts& placer_opts,
      * width of the widest channel.  Place_cost_exp says what exponent the   *
      * width should be taken to when calculating costs.  This allows a       *
      * greater bias for anisotropic architectures.                           */
-    dm_rlim = placer_opts.place_dm_rlim;
+#ifdef TEST_ILP_MOVE
+     /******** Abed: Testing ILP ************/
+     // This is just a random small test (not associated with any architecture)
+     unsigned ilp_num_blocks = 16; 
+     unsigned ilp_num_locations = 25; // 5x5 grid
+     unsigned ilp_cp_length = 10; // 10 blocks to place 
+     unsigned ilp_num_fixed = ilp_num_blocks - ilp_cp_length; 
+
+     srand(0); 
+     std::vector<std::vector<unsigned>> loc_types(ilp_num_blocks); // 1st, 3rd and 5th columns are logic. 2nd is DSP and third is RAM
+     std::vector<int> ilp_init_placment(ilp_num_blocks); // if -1 then movable
+     std::cout << "Block types: " << std::endl;
+     unsigned curr_fixed = 0; 
+     unsigned num_cols = 5; 
+     for (unsigned i = 0; i < ilp_num_blocks; i++) {
+        ilp_init_placment[i] = -1;
+
+        unsigned block_type = rand()%3; // if 0, then logic, else if 1, then DSP, else if 2 then RAM
+        if (block_type == 0) { 
+            std::cout << "   " << i << ": LOGIC" << std::endl;
+
+            int fix = rand()%2; 
+            if (fix == 1 && curr_fixed < ilp_num_fixed) {
+                unsigned loc_idx;
+                do {
+                    loc_idx = rand()%ilp_num_locations;
+                } while(loc_idx % num_cols == 1 || loc_idx % num_cols == 3); 
+                
+                ilp_init_placment[i] = loc_idx; 
+                curr_fixed++;
+            }
+        }
+        if (block_type == 1) { 
+            std::cout << "   " << i << ": DSP" << std::endl;
+            
+            int fix = rand()%2; 
+            if (fix == 1 && curr_fixed < ilp_num_fixed) {
+                unsigned loc_idx;
+                do {
+                    loc_idx = rand()%ilp_num_locations;
+                } while(loc_idx % num_cols != 1); 
+                
+                ilp_init_placment[i] = loc_idx; 
+                curr_fixed++;
+            }
+        }
+        if (block_type == 2) { 
+            std::cout << "   " << i << ": RAM" << std::endl;
+           
+           int fix = rand()%2; 
+            if (fix == 1 && curr_fixed < ilp_num_fixed) {
+                unsigned loc_idx;
+                do {
+                    loc_idx = rand()%ilp_num_locations;
+                } while(loc_idx % num_cols != 3); 
+                
+                ilp_init_placment[i] = loc_idx; 
+                curr_fixed++;
+            }
+        }
+        
+        loc_types[i].resize(ilp_num_locations); 
+        std::fill(loc_types[i].begin(), loc_types[i].end(), 0); 
+        for (unsigned j = 0; j < ilp_num_locations; j++) {
+            if (block_type == 0 && (j%num_cols == 0 || j%num_cols == 2 || j%num_cols == 4)) {
+                loc_types[i][j] = 1; // i can be place in loc j
+            }
+            else if (block_type == 1 && j%num_cols == 1) { 
+                loc_types[i][j] = 1;
+            }
+            else if (block_type == 2 && j%num_cols == 3) { 
+                loc_types[i][j] = 1;
+            }
+        }
+     }
+     ILPMove* ilp_move = new ILPMove("gurobi.log"); 
+
+     ilp_move->set_location_types(loc_types); 
+     ilp_move->set_initial_placement(ilp_init_placment); 
+
+     // Randomly generate edge delays between 1 and 5 
+     std::vector<std::vector<double>> edge_delays(ilp_num_locations); 
+     for (unsigned i = 0; i < ilp_num_locations; i++) {
+        edge_delays[i].resize(ilp_num_locations);
+
+        edge_delays[i][i] = 0; 
+        for (unsigned j = 0; j < ilp_num_locations; j++) {
+            if (j != i) {
+                edge_delays[i][j] = 1.0 + (5.0*rand())/RAND_MAX;
+            }
+        }
+     }
+
+     ilp_move->set_edge_delays(edge_delays);
+
+     if (ilp_move->reset_model()) {
+        std::vector<unsigned> cp_path; 
+        for (unsigned i = 0; i < ilp_num_blocks; i++) {
+            if (ilp_init_placment[i] == -1) {
+                cp_path.push_back(i); 
+            }
+        }
+
+        if (ilp_move->initialize_ilp_move(cp_path)) {
+            ilp_move->solve_ilp();
+
+            std::cerr << "DONE solving" << std::endl;
+        }
+     
+     }
+     exit(0); 
+     /***************************************/
+#endif
+	
+	
+	
+	
+	dm_rlim = placer_opts.place_dm_rlim;
     reward_num = placer_opts.place_reward_num;
     agent_algorithm = placer_opts.place_agent_algorithm;
 

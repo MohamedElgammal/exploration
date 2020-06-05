@@ -89,7 +89,7 @@ using std::max;
 using std::min;
 
 //#ifdef VTR_ENABLE_DEBUG_LOGGING
-#if 1
+#if 0
 void print_place_statisitics(const float &, const std::vector<int> &, const std::vector<int> &, const std::vector<int> &);
 #endif
 
@@ -550,6 +550,7 @@ static void generate_post_place_timing_reports(const t_placer_opts& placer_opts,
                 const PlacementDelayCalculator& delay_calc);
 
 static void print_place_status_header();
+
 static void print_place_status(const size_t num_temps,
                                const float elapsed_sec,
                                const float t,
@@ -937,7 +938,8 @@ void try_place(const t_placer_opts& placer_opts,
                            state.t, state.alpha,
                            stats,
                            critical_path.delay(), sTNS, sWNS,
-                           success_rat, std_dev, rlim, crit_exponent, tot_iter,num_moves,accepted_moves,aborted_moves);
+                           success_rat, std_dev, rlim, crit_exponent, tot_iter,num_moves);
+//,accepted_moves,aborted_moves);
 
         sprintf(msg, "Cost: %g  BB Cost %g  TD Cost %g  Temperature: %g",
                 costs.cost, costs.bb_cost, costs.timing_cost, state.t);
@@ -1079,7 +1081,6 @@ void try_place(const t_placer_opts& placer_opts,
 
     free_placement_structs(placer_opts);
     free_try_swap_arrays();
-<<<<<<< HEAD
 
     print_timing_stats("Placement Quench", post_quench_timing_stats, pre_quench_timing_stats);
     print_timing_stats("Placement Total ", timing_ctx.stats, pre_place_timing_stats);
@@ -3154,10 +3155,12 @@ static void print_place_status(const size_t num_temps,
                                const float std_dev,
                                const float rlim,
                                const float crit_exponent,
-                               size_t tot_moves,
+                               size_t tot_moves);
+/*,
                                const std::vector<int>& num_moves,
                                const std::vector<int>& accepted_moves,
                                const std::vector<int>& aborted_moves) {
+*/
     VTR_LOG(
         "%4zu "
         "%6.1f "
@@ -3287,7 +3290,7 @@ void stop_placement_and_check_breakopints(t_pl_blocks_to_be_moved& blocks_affect
     }
 
 //#ifdef VTR_ENABLE_DEBUG_LOGGING
-#if 1
+#if 0
 void print_place_statisitics(const float &t, const std::vector<int> & num_moves, const std::vector<int> & , const std::vector<int> &){
     FILE* f_ = vtr::fopen("moves_info.txt","a");
     fprintf(f_, "%1.9f", t);

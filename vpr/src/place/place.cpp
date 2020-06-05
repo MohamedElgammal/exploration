@@ -938,7 +938,8 @@ void try_place(const t_placer_opts& placer_opts,
                            state.t, state.alpha,
                            stats,
                            critical_path.delay(), sTNS, sWNS,
-                           success_rat, std_dev, rlim, crit_exponent, tot_iter,num_moves);
+                           success_rat, std_dev, rlim, crit_exponent, tot_iter);
+//,num_moves);
 //,accepted_moves,aborted_moves);
 
         sprintf(msg, "Cost: %g  BB Cost %g  TD Cost %g  Temperature: %g",
@@ -3155,12 +3156,14 @@ static void print_place_status(const size_t num_temps,
                                const float std_dev,
                                const float rlim,
                                const float crit_exponent,
-                               size_t tot_moves);
+                               size_t tot_moves){
 /*,
                                const std::vector<int>& num_moves,
                                const std::vector<int>& accepted_moves,
                                const std::vector<int>& aborted_moves) {
 */
+
+
     VTR_LOG(
         "%4zu "
         "%6.1f "

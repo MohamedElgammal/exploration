@@ -75,7 +75,7 @@ using std::max;
 using std::min;
 
 //#ifdef VTR_ENABLE_DEBUG_LOGGING
-#if 1
+#if 0
 void print_place_statisitics(const float &, const std::vector<int> &, const std::vector<int> &, const std::vector<int> &);
 #endif
 
@@ -470,10 +470,12 @@ static void print_place_status(const float t,
                                const float std_dev,
                                const float rlim,
                                const float crit_exponent,
-                               size_t tot_moves,
+                               size_t tot_moves);
+/*,
                                const std::vector<int>& num_moves,
                                const std::vector<int>& accepted_moves,
                                const std::vector<int>& aborted_moves);
+*/
 static void print_resources_utilization();
 
 /*****************************************************************************/
@@ -814,13 +816,14 @@ void try_place(const t_placer_opts& placer_opts,
             sWNS = timing_info->setup_worst_negative_slack();
         }
 //#ifdef VTR_ENABLE_DEBUG_LOGGING
-#if 1
+#if 0
         print_place_statisitics(t,num_moves,accepted_moves,aborted_moves);
 #endif
         print_place_status(t, oldt,
                            stats,
                            critical_path.delay(), sTNS, sWNS,
-                           success_rat, std_dev, rlim, crit_exponent, tot_iter,num_moves,accepted_moves,aborted_moves);
+                           success_rat, std_dev, rlim, crit_exponent, tot_iter,num_moves);
+//,accepted_moves,aborted_moves);
 
         sprintf(msg, "Cost: %g  BB Cost %g  TD Cost %g  Temperature: %g",
                 costs.cost, costs.bb_cost, costs.timing_cost, t);
@@ -887,7 +890,8 @@ void try_place(const t_placer_opts& placer_opts,
 
     print_place_status(t, oldt, stats,
                        critical_path.delay(), sTNS, sWNS,
-                       success_rat, std_dev, rlim, crit_exponent, tot_iter,num_moves,accepted_moves,aborted_moves);
+                       success_rat, std_dev, rlim, crit_exponent, tot_iter);
+//,num_moves,accepted_moves,aborted_moves);
 
     if (placer_opts.placement_saves_per_temperature >= 1) {
         std::string filename = vtr::string_fmt("placement_%03d_%03d.place", num_temps + 1, 0);
@@ -2868,13 +2872,13 @@ static void update_screen_debug() {
 #endif
 
 static void print_place_status_header() {
-    //VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------\n");
-    //VTR_LOG("      T Av Cost Av BB Cost Av TD Cost     CPD       sTNS     sWNS Ac Rate Std Dev  R lim Crit Exp Tot Moves  Alpha\n");
-    //VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------\n");
+    VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------\n");
+    VTR_LOG("      T Av Cost Av BB Cost Av TD Cost     CPD       sTNS     sWNS Ac Rate Std Dev  R lim Crit Exp Tot Moves  Alpha\n");
+    VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------\n");
 
-    VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------  ------------- ------------ ------------- ----------- ------------- ------------ ------------- ----------- --------------\n");
-    VTR_LOG("      T Av Cost Av BB Cost Av TD Cost     CPD       sTNS     sWNS Ac Rate Std Dev  R lim Crit Exp Tot Moves  Alpha   pacc_Uniform  pacc_Median  paccWeMedian  pacc_WCent pabo_Uniform  pabo_Median  pabo_WeMedian  pabo_WCent Accepted_moves\n");
-    VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------  ------------- ------------ ------------- ----------- ------------- ------------ ------------- ----------- --------------\n");
+    //VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------  ------------- ------------ ------------- ----------- ------------- ------------ ------------- ----------- --------------\n");
+    //VTR_LOG("      T Av Cost Av BB Cost Av TD Cost     CPD       sTNS     sWNS Ac Rate Std Dev  R lim Crit Exp Tot Moves  Alpha   pacc_Uniform  pacc_Median  paccWeMedian  pacc_WCent pabo_Uniform  pabo_Median  pabo_WeMedian  pabo_WCent Accepted_moves\n");
+    //VTR_LOG("------- ------- ---------- ---------- ------- ---------- -------- ------- ------- ------ -------- --------- ------  ------------- ------------ ------------- ----------- ------------- ------------ ------------- ----------- --------------\n");
 }
 
 static void print_place_status(const float t,
@@ -2887,10 +2891,12 @@ static void print_place_status(const float t,
                                const float std_dev,
                                const float rlim,
                                const float crit_exponent,
-                               size_t tot_moves,
+                               size_t tot_moves);
+/*,
                                const std::vector<int>& num_moves,
                                const std::vector<int>& accepted_moves,
                                const std::vector<int>& aborted_moves) {
+*/
     VTR_LOG(
         "%7.1e "
         "%7.3f %10.2f %-10.5g "
@@ -2904,12 +2910,12 @@ static void print_place_status(const float t,
     pretty_print_uint(" ", tot_moves, 10, 3);
 
     VTR_LOG(" %6.3f", t / oldt);
-    VTR_LOG(" %13.4f %12.4f %13.4f %11.4f", float(accepted_moves[0])/num_moves[0], float(accepted_moves[1])/num_moves[1],
-            float(accepted_moves[2])/num_moves[2], float(accepted_moves[3])/num_moves[3]);
+    //VTR_LOG(" %13.4f %12.4f %13.4f %11.4f", float(accepted_moves[0])/num_moves[0], float(accepted_moves[1])/num_moves[1],
+    //        float(accepted_moves[2])/num_moves[2], float(accepted_moves[3])/num_moves[3]);
 
-    VTR_LOG(" %13.4f %12.4f %13.4f %11.4f %14.4f\n", float(aborted_moves[0])/num_moves[0], float(aborted_moves[1])/num_moves[1],
-            float(aborted_moves[2])/num_moves[2], float(aborted_moves[3])/num_moves[3],
-            float(std::accumulate(accepted_moves.begin(), accepted_moves.end(),0))/tot_moves);
+    //VTR_LOG(" %13.4f %12.4f %13.4f %11.4f %14.4f\n", float(aborted_moves[0])/num_moves[0], float(aborted_moves[1])/num_moves[1],
+    //        float(aborted_moves[2])/num_moves[2], float(aborted_moves[3])/num_moves[3],
+    //        float(std::accumulate(accepted_moves.begin(), accepted_moves.end(),0))/tot_moves);
     fflush(stdout);
 }
 
@@ -2954,7 +2960,7 @@ bool placer_needs_lookahead(const t_vpr_setup& vpr_setup) {
 
 
 //#ifdef VTR_ENABLE_DEBUG_LOGGING
-#if 1
+#if 0
 void print_place_statisitics(const float &t, const std::vector<int> & num_moves, const std::vector<int> & , const std::vector<int> &){
     FILE* f_ = vtr::fopen("moves_info.txt","a");
     fprintf(f_, "%1.9f", t);

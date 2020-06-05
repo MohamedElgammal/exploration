@@ -822,7 +822,8 @@ void try_place(const t_placer_opts& placer_opts,
         print_place_status(t, oldt,
                            stats,
                            critical_path.delay(), sTNS, sWNS,
-                           success_rat, std_dev, rlim, crit_exponent, tot_iter,num_moves);
+                           success_rat, std_dev, rlim, crit_exponent, tot_iter);
+//,num_moves);
 //,accepted_moves,aborted_moves);
 
         sprintf(msg, "Cost: %g  BB Cost %g  TD Cost %g  Temperature: %g",
@@ -2891,12 +2892,14 @@ static void print_place_status(const float t,
                                const float std_dev,
                                const float rlim,
                                const float crit_exponent,
-                               size_t tot_moves);
+                               size_t tot_moves){
 /*,
                                const std::vector<int>& num_moves,
                                const std::vector<int>& accepted_moves,
                                const std::vector<int>& aborted_moves) {
 */
+
+
     VTR_LOG(
         "%7.1e "
         "%7.3f %10.2f %-10.5g "
@@ -2908,8 +2911,13 @@ static void print_place_status(const float t,
         acc_rate, std_dev, rlim, crit_exponent);
 
     pretty_print_uint(" ", tot_moves, 10, 3);
-
-    VTR_LOG(" %6.3f", t / oldt);
+    float alpha;
+    if (oldt == 0.) {
+        alpha = 0.;
+    } else {
+        alpha = t / oldt;
+    }
+    VTR_LOG(" %6.3f\n", alpha);
     //VTR_LOG(" %13.4f %12.4f %13.4f %11.4f", float(accepted_moves[0])/num_moves[0], float(accepted_moves[1])/num_moves[1],
     //        float(accepted_moves[2])/num_moves[2], float(accepted_moves[3])/num_moves[3]);
 

@@ -47,6 +47,7 @@
 
 #define HI_LIMIT 0.8
 #define LOW_LIMIT 0.2
+#define TIMING_BB_STEP 0.005
 
 #if 0 //measure the move generator time
 #include <chrono>
@@ -59,6 +60,11 @@ std::vector<double> time_of_moves (7,0);
 #include "draw_types.h"
 #include "draw_global.h"
 #include "draw_color.h"
+#endif
+
+using std::max;
+using std::min;
+
 //map of the available move types and their corresponding type number
 std::map<int,std::string> available_move_types = {
                                 {0,"Uniform"},
@@ -69,11 +75,6 @@ std::map<int,std::string> available_move_types = {
                                 {5,"Critical Uniform"},
                                 {6,"Centroid"}
 };
-#endif
-
-using std::max;
-using std::min;
-
 //#ifdef VTR_ENABLE_DEBUG_LOGGING
 #if 0
 void print_place_statisitics(const float &, const std::vector<int> &, const std::vector<int> &, const std::vector<int> &);
@@ -779,12 +780,12 @@ void try_place(const t_placer_opts& placer_opts,
                                            place_delay_model.get(),
                                            *timing_info);
 
-        std::fill(num_moves.begin(),num_moves.end(),0);
-        std::fill(accepted_moves.begin(),accepted_moves.end(),0);
-        std::fill(aborted_moves.begin(),aborted_moves.end(),0);
-        timing_bb_factor = timing_bb_factor - 0.005;
-        if(timing_bb_factor < 0.2)
-            timing_bb_factor = 0.2;
+        //std::fill(num_moves.begin(),num_moves.end(),0);
+        //std::fill(accepted_moves.begin(),accepted_moves.end(),0);
+        //std::fill(aborted_moves.begin(),aborted_moves.end(),0);
+        timing_bb_factor = timing_bb_factor - TIMING_BB_STEP;
+        if(timing_bb_factor < LOW_LIMIT)
+            timing_bb_factor = LOW_LIMIT;
         placement_inner_loop(t, num_temps, rlim, placer_opts,
                              move_lim, crit_exponent, inner_recompute_limit, &stats,
                              &costs,
@@ -858,8 +859,8 @@ void try_place(const t_placer_opts& placer_opts,
 
     /* Run inner loop again with temperature = 0 so as to accept only swaps
      * which reduce the cost of the placement */
-    std::fill(num_moves.begin(),num_moves.end(),0);
-    std::fill(accepted_moves.begin(),accepted_moves.end(),0);
+    //std::fill(num_moves.begin(),num_moves.end(),0);
+    //std::fill(accepted_moves.begin(),accepted_moves.end(),0);
     timing_bb_factor = LOW_LIMIT;
     placement_inner_loop(t, num_temps, rlim, placer_opts,
                          move_lim, crit_exponent, inner_recompute_limit, &stats,
@@ -988,6 +989,25 @@ void try_place(const t_placer_opts& placer_opts,
     VTR_LOG("\tSwaps aborted : %*d (%4.1f %%)\n", num_swap_print_digits, num_swap_aborted, 100 * abort_rate);
 
     report_aborted_moves();
+    
+    float moves,accepted, rejected, aborted;
+    float total_moves = std::accumulate(num_moves.begin(), num_moves.end(), 0.0);
+
+    std::string move_name;
+    VTR_LOG("\n\nPercentage of different move types:\n");
+
+    for(size_t i = 0; i < num_moves.size(); i++){
+        moves = num_moves[i];
+        if(moves != 0){
+            accepted = accepted_moves[i];
+            aborted = aborted_moves[i];
+            rejected = moves - (accepted + aborted); 
+            move_name = available_move_types[int(i)];
+            VTR_LOG("\t%.17s move: %2.2f %% (acc=%2.2f %%, rej=%2.2f %%, aborted=%2.2f %%)\n", move_name.c_str(), 100*moves/total_moves,100*accepted/moves, 100*rejected/moves, 100*aborted/moves);
+        }
+    }
+
+
 
     free_placement_structs(placer_opts);
     if (placer_opts.place_algorithm == PATH_TIMING_DRIVEN_PLACE
@@ -1440,7 +1460,9 @@ static e_move_result try_swap(float t,
     auto start = std::chrono::high_resolution_clock::now();
 #endif
     e_create_move create_move_outcome = move_generator.propose_move(blocks_affected
-      , rlim, X_coord, Y_coord, num_moves, type, high_fanout_net);
+      , rlim, X_coord, Y_coord, type, high_fanout_net);
+
+    ++num_moves[type];
 #if 0
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);

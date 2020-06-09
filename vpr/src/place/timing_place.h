@@ -7,7 +7,7 @@
 #include "place_delay_model.h"
 #include "vpr_net_pins_matrix.h"
 
-const float HIGH_CRIT = 0.95;
+const float HIGH_CRIT = 0.8;
 extern std::vector<std::pair<ClusterNetId, int>> highly_crit_pins;
 std::unique_ptr<PlaceDelayModel> alloc_lookups_and_criticalities(t_chan_width_dist chan_width_dist,
                                                                  const t_placer_opts& place_opts,

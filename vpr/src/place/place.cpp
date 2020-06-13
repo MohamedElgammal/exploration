@@ -185,7 +185,7 @@ static vtr::vector<ClusterBlockId, std::vector<int>> net_pin_indices;
  * blocks on each of a net's bounding box (to allow efficient updates),      *
  * respectively.                                                             */
 
-static vtr::vector<ClusterNetId, t_bb> bb_coords, bb_num_on_edges;
+vtr::vector<ClusterNetId, t_bb> bb_coords, bb_num_on_edges;
 
 /* The arrays below are used to precompute the inverse of the average   *
  * number of tracks per channel between [subhigh] and [sublow].  Access *

@@ -83,6 +83,9 @@ class PlacerCriticalities {
 
     //Set of pins with criticaltites modified by last call to update_criticalities()
     vtr::vec_id_set<ClusterPinId> cluster_pins_with_modified_criticality_;
+
+    //if this is first time to call update_criticality
+    bool first_time_update_criticality = true;
 };
 
 /* Usage

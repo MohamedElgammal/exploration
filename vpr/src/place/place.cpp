@@ -530,7 +530,7 @@ static void placement_inner_loop(float t,
                 PlacerCriticalities* criticalities,
                 MoveGenerator& move_generator,
                 t_pl_blocks_to_be_moved& blocks_affected,
-                SetupTimingInfo& timing_info,
+                SetupTimingInfo* timing_info,
                 std::vector<int>& X_coord,
                 std::vector<int>& Y_coord,
                 std::vector<int>& num_moves,
@@ -983,7 +983,15 @@ void try_place(const t_placer_opts& placer_opts,
                              placer_criticalities.get(),
                              *move_generator,
                              blocks_affected,
-                             timing_info.get());
+                             timing_info.get(),
+                             X_coord,
+                             Y_coord,
+                             num_moves,
+                             accepted_moves,
+                             aborted_moves,
+                             timing_bb_factor);
+
+        oldt = state.t;
 
         tot_iter += move_lim;
         ++num_temps;
@@ -1205,7 +1213,7 @@ static void placement_inner_loop(float t,
                                  PlacerCriticalities* criticalities,
                                  MoveGenerator& move_generator,
                                  t_pl_blocks_to_be_moved& blocks_affected,
-                                 SetupTimingInfo& timing_info,
+                                 SetupTimingInfo* timing_info,
                                  std::vector<int>& X_coord,
                                  std::vector<int>& Y_coord,
                                  std::vector<int>& num_moves,
@@ -1623,7 +1631,7 @@ static e_move_result try_swap(float t,
     auto start = std::chrono::high_resolution_clock::now();
 #endif
     e_create_move create_move_outcome = move_generator.propose_move(blocks_affected
-      , rlim, X_coord, Y_coord, type, high_fanout_net);
+      , rlim, X_coord, Y_coord, type, high_fanout_net, criticalities);
 
     ++num_moves[type];
 #if 0

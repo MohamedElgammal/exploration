@@ -14,6 +14,7 @@ extern bool f_placer_debug;
 
 extern int dm_rlim;
 extern e_agent_algorithm agent_algorithm;
+extern vtr::vector<ClusterNetId, t_bb> bb_coords, bb_num_on_edges;
 
 /* This is for the placement swap routines. A swap attempt could be       *
  * rejected, accepted or aborted (due to the limitations placed on the    *

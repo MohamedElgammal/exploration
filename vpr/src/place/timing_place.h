@@ -60,6 +60,9 @@ class PlacerCriticalities {
     //Returns the criticality of the specified connection
     float criticality(ClusterNetId net, int ipin) const { return timing_place_crit_[net][ipin]; }
 
+    //Returns the normalized criticality of the specified connection
+    float normalized_criticality(ClusterNetId net, int ipin) const { return timing_place_normalized_crit_[net][ipin]; }
+
     //Returns the range of clustered netlist pins (i.e. ClusterPinIds) which were modified
     //by the last call to update_criticalities()
     pin_range pins_with_modified_criticality() const;
@@ -77,6 +80,7 @@ class PlacerCriticalities {
     const ClusteredPinAtomPinsLookup& pin_lookup_;
 
     ClbNetPinsMatrix<float> timing_place_crit_; /* [0..cluster_ctx.clb_nlist.nets().size()-1][1..num_pins-1] */
+    ClbNetPinsMatrix<float> timing_place_normalized_crit_; /* [0..cluster_ctx.clb_nlist.nets().size()-1][1..num_pins-1] */
 
     //The criticality exponent when update_criticalites() was last called (used to detect if incremental update can be used)
     float last_crit_exponent_ = std::numeric_limits<float>::quiet_NaN();

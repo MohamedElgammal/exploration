@@ -18,6 +18,8 @@
 constexpr bool INCR_UPDATE_CRITICALITIES = true;
 
 std::vector<std::pair<ClusterNetId, int>> highly_crit_pins;
+std::unordered_set<ClusterBlockId> highly_crit_blocks;
+
 /**************************************/
 
 /* Allocates space for the timing_place_crit_ data structure *
@@ -74,7 +76,11 @@ void PlacerCriticalities::update_criticalities(const SetupTimingInfo* timing_inf
         auto pins = clb_nlist_.pins();
         cluster_pins_with_modified_criticality_.insert(pins.begin(), pins.end());
     }
-
+    
+    ClusterBlockId crit_block;
+    auto& cluster_ctx = g_vpr_ctx.clustering();
+    highly_crit_blocks.clear();
+ 
     //Update the effected pins
     for (ClusterPinId clb_pin : cluster_pins_with_modified_criticality_) {
         ClusterNetId clb_net = clb_nlist_.pin_net(clb_pin);
@@ -84,15 +90,15 @@ void PlacerCriticalities::update_criticalities(const SetupTimingInfo* timing_inf
 
         float new_crit = pow(clb_pin_crit, crit_exponent);
         if(!first_time_update_criticality){
-            if(new_crit > HIGH_CRIT && timing_place_crit_[clb_net][pin_index_in_net] < HIGH_CRIT){
+            if(new_crit > crit_limit && timing_place_crit_[clb_net][pin_index_in_net] < crit_limit){
                 highly_crit_pins.push_back(std::make_pair(clb_net,pin_index_in_net));
             }
-            else if (new_crit < HIGH_CRIT && timing_place_crit_[clb_net][pin_index_in_net] > HIGH_CRIT){
+            else if (new_crit < crit_limit && timing_place_crit_[clb_net][pin_index_in_net] > crit_limit){
                 highly_crit_pins.erase(std::remove(highly_crit_pins.begin(), highly_crit_pins.end(), std::make_pair(clb_net,pin_index_in_net)), highly_crit_pins.end());
             }
         }
         else {
-            if(new_crit > HIGH_CRIT)
+            if(new_crit > crit_limit)
                 highly_crit_pins.push_back(std::make_pair(clb_net,pin_index_in_net));
         }
 
@@ -101,6 +107,9 @@ void PlacerCriticalities::update_criticalities(const SetupTimingInfo* timing_inf
          * criticality by taking it to some power, crit_exponent (between 1 and 8 by default). */
         timing_place_crit_[clb_net][pin_index_in_net] = new_crit;
         timing_place_normalized_crit_[clb_net][pin_index_in_net] = clb_pin_crit;
+
+        if(new_crit > crit_limit)
+            highly_crit_blocks.insert(cluster_ctx.clb_nlist.net_driver_block(clb_net));
 
     }
     first_time_update_criticality = false;

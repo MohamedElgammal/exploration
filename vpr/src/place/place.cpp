@@ -69,11 +69,7 @@ int timing_cost_func;
 using std::max;
 using std::min;
 
-FILE* f_pins = nullptr;
-FILE* f_blocks = nullptr;
 
-int total_pins = 0; 
-int total_blocks = 0;
 
 //map of the available move types and their corresponding type number
 std::map<int,std::string> available_move_types = {
@@ -588,15 +584,6 @@ void try_place(const t_placer_opts& placer_opts,
     char msg[vtr::bufsize];
     t_placer_statistics stats;
     
-    total_blocks = cluster_ctx.clb_nlist.blocks().size();
-    for (auto net_id : cluster_ctx.clb_nlist.nets()) { 
-         if (cluster_ctx.clb_nlist.net_is_ignored(net_id))
-            continue;
-
-        total_pins += cluster_ctx.clb_nlist.net_sinks(net_id).size();
-    }
-    f_pins = vtr::fopen("high_crit_pins.txt", "w");
-    f_blocks = vtr::fopen("high_crit_blocks.txt","w");
 
     std::shared_ptr<SetupTimingInfo> timing_info;
     std::shared_ptr<PlacementDelayCalculator> placement_delay_calc;
@@ -3252,8 +3239,6 @@ static void print_place_status(const size_t num_temps,
     } else {
         alpha = t / oldt;
     }
-    fprintf(f_pins, "%g, %zu, %g\n", oldt, highly_crit_pins.size(), highly_crit_pins.size()*100.0/total_pins);
-    fprintf(f_blocks, "%g, %zu, %g\n", oldt, highly_crit_blocks.size(), highly_crit_blocks.size()*100.0/total_blocks);
 
     VTR_LOG(" %6.3f\n", alpha);
     fflush(stdout);

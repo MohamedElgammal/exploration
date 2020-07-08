@@ -1730,7 +1730,7 @@ static e_move_result try_swap(float t,
         move_generator.process_outcome(-1*delta_c);
         
     }
-    else if(reward_num == 2 || reward_num == 1){
+    else if(reward_num == 2 || reward_num == 1 || reward_num ==3 ){
         if(delta_c < 0){
             move_generator.process_outcome(-1*delta_c);
         }

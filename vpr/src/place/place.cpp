@@ -1124,7 +1124,7 @@ void try_place(const t_placer_opts& placer_opts,
 
     VTR_LOG("update_td_costs: connections %g nets %g sum_nets %g total %g\n", f_update_td_costs_connections_elapsed_sec, f_update_td_costs_nets_elapsed_sec, f_update_td_costs_sum_nets_elapsed_sec, f_update_td_costs_total_elapsed_sec);
 
-#if 0
+#if 1
     //measure time of each move type
     VTR_LOG("time of uniform move = %f \n", time_of_moves[0]/num_of_moves[0]);
     VTR_LOG("time of median move = %f \n", time_of_moves[1]/num_of_moves[0]);
@@ -1634,14 +1634,14 @@ static e_move_result try_swap(float t,
     }
 
     //Generate a new move (perturbation) used to explore the space of possible placements
-#if 0
+#if 1
     auto start = std::chrono::high_resolution_clock::now();
 #endif
     e_create_move create_move_outcome = move_generator.propose_move(blocks_affected
       , rlim, X_coord, Y_coord, type, high_fanout_net, criticalities);
 
     ++num_moves[type];
-#if 0
+#if 1
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 

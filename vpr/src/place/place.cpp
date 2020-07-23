@@ -66,10 +66,26 @@ std::vector<double> time_of_moves (7,0);
 
 int timing_cost_func;
 
+enum print_info {MOVE_TYPE, XY_RANGES, NONE};
+print_info stats_to_print = XY_RANGES;
+//print_info stats_to_print = MOVE_TYPE;
+
 using std::max;
 using std::min;
 
+std::vector<std::string> xy_ranges_name = {"deltax > 20", "deltax > 10", "deltax > 5", "deltax <= 5", "deltay > 20", "deltay > 10", "deltay > 5", "deltay <= 5"};
 
+int get_xy_range_index(int loc1, int loc2){
+    int diff =  std::abs(loc1 - loc2);
+    if (diff > 20)
+        return 0;
+    else if (diff > 10)
+        return 1;
+    else if (diff > 5)
+        return 2;
+    else
+        return 3;
+}
 
 //map of the available move types and their corresponding type number
 std::map<int,std::string> available_move_types = {
@@ -840,9 +856,20 @@ void try_place(const t_placer_opts& placer_opts,
     std::vector<int> X_coord, Y_coord;
 
     //Define some variables for move generation statistics
-    std::vector<int> num_moves (placer_opts.place_static_move_prob.size()*5,0);
-    std::vector<int> accepted_moves (placer_opts.place_static_move_prob.size()*5,0);
-    std::vector<int> aborted_moves (placer_opts.place_static_move_prob.size()*5,0);
+    std::vector<int> num_moves(0);
+    std::vector<int> accepted_moves(0);
+    std::vector<int> aborted_moves(0);
+
+    if(stats_to_print == MOVE_TYPE){
+        num_moves.resize(placer_opts.place_static_move_prob.size()*5,0);
+        accepted_moves.resize(placer_opts.place_static_move_prob.size()*5,0);
+        aborted_moves.resize(placer_opts.place_static_move_prob.size()*5,0);
+    }
+    else if(stats_to_print == XY_RANGES){
+        num_moves.resize(placer_opts.place_static_move_prob.size()*8,0);
+        accepted_moves.resize(placer_opts.place_static_move_prob.size()*8,0);
+        aborted_moves.resize(placer_opts.place_static_move_prob.size()*8,0);
+    }
 
     t = starting_t(&costs, &prev_inverse_costs,
                    annealing_sched, move_lim, rlim,
@@ -1150,21 +1177,39 @@ void try_place(const t_placer_opts& placer_opts,
 
     std::string move_name;
     VTR_LOG("\n\nPercentage of different move types:\n");
-
-    for(size_t i = 0; i < 7; i++){
-        move_name = available_move_types[int(i)];
-        moves = num_moves[5*i] + num_moves[5*i+1] + num_moves[5*i+2] + num_moves[5*i+3] + num_moves[5*4];
-        VTR_LOG("MOVE TYPE: %17s, %2.2f %%\n", move_name.c_str(), 100*moves/total_moves);
-        for(int j = 0 ; j < 5; j++){
-            if(num_moves[i*5+j] != 0){
-                moves = num_moves[i*5+j];
-                accepted = accepted_moves[i*5+j];
-                aborted = aborted_moves[i*5+j];
-                rejected = moves - (accepted + aborted);
-                VTR_LOG("\t Type %d (%s): %2.0f (acc=%2.2f %%, rej=%2.2f %%, aborted=%2.2f %%)\n", j, block_types[j].c_str(), moves, 100*accepted/moves, 100*rejected/moves, 100*aborted/moves);
+    if(stats_to_print == MOVE_TYPE){
+        for(size_t i = 0; i < 7; i++){
+            move_name = available_move_types[int(i)];
+            moves = num_moves[5*i] + num_moves[5*i+1] + num_moves[5*i+2] + num_moves[5*i+3] + num_moves[5*i+4];
+            VTR_LOG("MOVE TYPE: %17s, %2.2f %%\n", move_name.c_str(), 100*moves/total_moves);
+            for(int j = 0 ; j < 5; j++){
+                if(num_moves[i*5+j] != 0){
+                    moves = num_moves[i*5+j];
+                    accepted = accepted_moves[i*5+j];
+                    aborted = aborted_moves[i*5+j];
+                    rejected = moves - (accepted + aborted);
+                    VTR_LOG("\t Type %d (%s): %2.0f (acc=%2.2f %%, rej=%2.2f %%, aborted=%2.2f %%)\n", j, block_types[j].c_str(), moves, 100*accepted/moves, 100*rejected/moves, 100*aborted/moves);
+                }
             }
+            VTR_LOG("\n");
         }
-        VTR_LOG("\n");
+    }
+    else if(stats_to_print == XY_RANGES){
+        total_moves = total_moves/2;
+        for(size_t i = 0; i < 7; i++){
+            move_name = available_move_types[int(i)];
+            moves = num_moves[8*i] + num_moves[8*i+1] + num_moves[8*i+2] + num_moves[8*i+3];
+            VTR_LOG("MOVE TYPE: %17s, %2.2f %%\n", move_name.c_str(), 100*moves/total_moves);
+            for(int j = 0 ; j < 8; j++){
+                if(num_moves[i*8+j] != 0){
+                    moves = num_moves[i*8+j];
+                    accepted = accepted_moves[i*8+j];
+                    rejected = moves - accepted ;
+                    VTR_LOG("\t  %s: %2.0f (acc=%2.2f %%, rej=%2.2f %%)\n", xy_ranges_name[j].c_str(), moves, 100*accepted/moves, 100*rejected/moves);
+                }
+            }
+            VTR_LOG("\n");
+        }
     }
 
     free_placement_structs(placer_opts);
@@ -1665,10 +1710,16 @@ static e_move_result try_swap(float t,
     e_create_move create_move_outcome = move_generator.propose_move(blocks_affected
       , rlim, X_coord, Y_coord, type, high_fanout_net, criticalities);
 
-    auto& cluster_ctx = g_vpr_ctx.clustering();
-    auto cluster_from_type = cluster_ctx.clb_nlist.block_type(blocks_affected.moved_blocks[0].block_num);
-    ++num_moves[type*5 + cluster_from_type->index];
-    block_types.insert({cluster_from_type->index, cluster_from_type->name});
+    if(stats_to_print == MOVE_TYPE){
+        auto& cluster_ctx = g_vpr_ctx.clustering();
+        auto cluster_from_type = cluster_ctx.clb_nlist.block_type(blocks_affected.moved_blocks[0].block_num);
+        ++num_moves[type*5 + cluster_from_type->index];
+        block_types.insert({cluster_from_type->index, cluster_from_type->name});
+    }
+    else if (stats_to_print == XY_RANGES && blocks_affected.moved_blocks.size() != 0){
+        ++num_moves[type*8 + get_xy_range_index(blocks_affected.moved_blocks[0].old_loc.x, blocks_affected.moved_blocks[0].new_loc.x)];
+        ++num_moves[type*8 + 4 + get_xy_range_index(blocks_affected.moved_blocks[0].old_loc.y, blocks_affected.moved_blocks[0].new_loc.y)];
+    }
 #if 1
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
@@ -1691,7 +1742,12 @@ static e_move_result try_swap(float t,
 
         move_outcome = ABORTED;
 
-        ++aborted_moves[type*5 + cluster_from_type->index];
+        if(stats_to_print == MOVE_TYPE){
+            auto& cluster_ctx = g_vpr_ctx.clustering();
+            auto cluster_from_type = cluster_ctx.clb_nlist.block_type(blocks_affected.moved_blocks[0].block_num);
+            ++aborted_moves[type*5 + cluster_from_type->index];
+        }
+        else {}
     } else {
         VTR_ASSERT(create_move_outcome == e_create_move::VALID);
 
@@ -1757,7 +1813,15 @@ static e_move_result try_swap(float t,
             /* Update clb data structures since we kept the move. */
             commit_move_blocks(blocks_affected);
 
-            ++accepted_moves[type*5 + cluster_from_type->index];
+            if(stats_to_print == MOVE_TYPE){
+                auto& cluster_ctx = g_vpr_ctx.clustering();
+                auto cluster_from_type = cluster_ctx.clb_nlist.block_type(blocks_affected.moved_blocks[0].block_num);
+                ++accepted_moves[type*5 + cluster_from_type->index];
+            }
+            else if(stats_to_print == XY_RANGES){
+                ++accepted_moves[type*8 + get_xy_range_index(blocks_affected.moved_blocks[0].old_loc.x, blocks_affected.moved_blocks[0].new_loc.x)];
+                ++accepted_moves[type*8 + 4 + get_xy_range_index(blocks_affected.moved_blocks[0].old_loc.y, blocks_affected.moved_blocks[0].new_loc.y)];
+            }
         } else { /* Move was rejected.  */
                  /* Reset the net cost function flags first. */
             reset_move_nets(num_nets_affected);

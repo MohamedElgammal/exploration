@@ -81,6 +81,9 @@ std::map<int,std::string> available_move_types = {
         {5,"Critical_uniform"},
         {6,"Feasible_region"}
 };
+
+std::map<int,std::string> block_types = {};
+
 #ifdef VTR_ENABLE_DEBUG_LOGGING
 void print_place_statisitics(const int&, const float &, const std::vector<int> &, const std::vector<int> &, const std::vector<int> &);
 #endif
@@ -582,7 +585,7 @@ void try_place(const t_placer_opts& placer_opts,
     double std_dev;
     char msg[vtr::bufsize];
     t_placer_statistics stats;
-    
+
 
     std::shared_ptr<SetupTimingInfo> timing_info;
     std::shared_ptr<PlacementDelayCalculator> placement_delay_calc;
@@ -628,7 +631,7 @@ void try_place(const t_placer_opts& placer_opts,
         move_generator = std::make_unique<StaticMoveGenerator>(placer_opts.place_static_move_prob);
     }
     else{
-        if(agent_algorithm == E_GREEDY){ 
+        if(agent_algorithm == E_GREEDY){
             VTR_LOG("Using simple RL 'Epsilon Greedy agent' for choosing move types\n");
             std::unique_ptr<EpsilonGreedyAgent> karmed_bandit_agent;
             karmed_bandit_agent = std::make_unique<EpsilonGreedyAgent>(4, placer_opts.place_agent_epsilon);
@@ -643,7 +646,7 @@ void try_place(const t_placer_opts& placer_opts,
             move_generator = std::make_unique<SimpleRLMoveGenerator>(karmed_bandit_agent);
         }
 
-        if(agent_algorithm == E_GREEDY){ 
+        if(agent_algorithm == E_GREEDY){
             VTR_LOG("Using simple RL 'Epsilon Greedy agent' for choosing move types\n");
             std::unique_ptr<EpsilonGreedyAgent> karmed_bandit_agent;
             karmed_bandit_agent = std::make_unique<EpsilonGreedyAgent>(7, placer_opts.place_agent_epsilon);
@@ -837,9 +840,9 @@ void try_place(const t_placer_opts& placer_opts,
     std::vector<int> X_coord, Y_coord;
 
     //Define some variables for move generation statistics
-    std::vector<int> num_moves (placer_opts.place_static_move_prob.size(),0);
-    std::vector<int> accepted_moves (placer_opts.place_static_move_prob.size(),0);
-    std::vector<int> aborted_moves (placer_opts.place_static_move_prob.size(),0);
+    std::vector<int> num_moves (placer_opts.place_static_move_prob.size()*5,0);
+    std::vector<int> accepted_moves (placer_opts.place_static_move_prob.size()*5,0);
+    std::vector<int> aborted_moves (placer_opts.place_static_move_prob.size()*5,0);
 
     t = starting_t(&costs, &prev_inverse_costs,
                    annealing_sched, move_lim, rlim,
@@ -896,7 +899,7 @@ void try_place(const t_placer_opts& placer_opts,
         if(timing_bb_factor < LOW_LIMIT)
             timing_bb_factor = LOW_LIMIT;
 
-        if(state == 1){
+        if(state == 1 || placer_opts.simpleRL_agent_placement == false){
             placement_inner_loop(t, num_temps, rlim, placer_opts,
                              move_lim, crit_exponent, inner_recompute_limit, &stats,
                              &costs,
@@ -986,7 +989,7 @@ void try_place(const t_placer_opts& placer_opts,
 
     auto pre_quench_timing_stats = timing_ctx.stats;
     { /* Quench */
-    
+
 
         vtr::ScopedFinishTimer temperature_timer("Placement Quench");
 
@@ -1004,7 +1007,8 @@ void try_place(const t_placer_opts& placer_opts,
 
         /* Run inner loop again with temperature = 0 so as to accept only swaps
          * which reduce the cost of the placement */
-        placement_inner_loop(t, num_temps, rlim, placer_opts,
+        if(placer_opts.simpleRL_agent_placement){
+            placement_inner_loop(t, num_temps, rlim, placer_opts,
                              move_lim, crit_exponent, quench_recompute_limit, &stats,
                              &costs,
                              &prev_inverse_costs,
@@ -1021,7 +1025,27 @@ void try_place(const t_placer_opts& placer_opts,
                              accepted_moves,
                              aborted_moves,
                              timing_bb_factor);
+        }else{
+            placement_inner_loop(t, num_temps, rlim, placer_opts,
+                             move_lim, crit_exponent, quench_recompute_limit, &stats,
+                             &costs,
+                             &prev_inverse_costs,
+                             &moves_since_cost_recompute,
+                             pin_timing_invalidator.get(),
+                             place_delay_model.get(),
+                             placer_criticalities.get(),
+                             *move_generator,
+                             blocks_affected,
+                             timing_info.get(),
+                             X_coord,
+                             Y_coord,
+                             num_moves,
+                             accepted_moves,
+                             aborted_moves,
+                             timing_bb_factor);
 
+
+        }
         oldt = t;
 
         tot_iter += move_lim;
@@ -1120,25 +1144,28 @@ void try_place(const t_placer_opts& placer_opts,
     VTR_LOG("\tSwaps rejected: %*d (%4.1f %%)\n", num_swap_print_digits, num_swap_rejected, 100 * reject_rate);
     VTR_LOG("\tSwaps aborted : %*d (%4.1f %%)\n", num_swap_print_digits, num_swap_aborted, 100 * abort_rate);
 
-    
+
     float moves,accepted, rejected, aborted;
     float total_moves = std::accumulate(num_moves.begin(), num_moves.end(), 0.0);
 
     std::string move_name;
     VTR_LOG("\n\nPercentage of different move types:\n");
 
-    for(size_t i = 0; i < num_moves.size(); i++){
-        moves = num_moves[i];
-        if(moves != 0){
-            accepted = accepted_moves[i];
-            aborted = aborted_moves[i];
-            rejected = moves - (accepted + aborted); 
-            move_name = available_move_types[int(i)];
-            VTR_LOG("\t%.17s move: %2.2f %% (acc=%2.2f %%, rej=%2.2f %%, aborted=%2.2f %%)\n", move_name.c_str(), 100*moves/total_moves,100*accepted/moves, 100*rejected/moves, 100*aborted/moves);
+    for(size_t i = 0; i < 7; i++){
+        move_name = available_move_types[int(i)];
+        moves = num_moves[5*i] + num_moves[5*i+1] + num_moves[5*i+2] + num_moves[5*i+3] + num_moves[5*4];
+        VTR_LOG("MOVE TYPE: %17s, %2.2f %%\n", move_name.c_str(), 100*moves/total_moves);
+        for(int j = 0 ; j < 5; j++){
+            if(num_moves[i*5+j] != 0){
+                moves = num_moves[i*5+j];
+                accepted = accepted_moves[i*5+j];
+                aborted = aborted_moves[i*5+j];
+                rejected = moves - (accepted + aborted);
+                VTR_LOG("\t Type %d (%s): %2.0f (acc=%2.2f %%, rej=%2.2f %%, aborted=%2.2f %%)\n", j, block_types[j].c_str(), moves, 100*accepted/moves, 100*rejected/moves, 100*aborted/moves);
+            }
         }
+        VTR_LOG("\n");
     }
-
-
 
     free_placement_structs(placer_opts);
     free_try_swap_arrays();
@@ -1638,7 +1665,10 @@ static e_move_result try_swap(float t,
     e_create_move create_move_outcome = move_generator.propose_move(blocks_affected
       , rlim, X_coord, Y_coord, type, high_fanout_net, criticalities);
 
-    ++num_moves[type];
+    auto& cluster_ctx = g_vpr_ctx.clustering();
+    auto cluster_from_type = cluster_ctx.clb_nlist.block_type(blocks_affected.moved_blocks[0].block_num);
+    ++num_moves[type*5 + cluster_from_type->index];
+    block_types.insert({cluster_from_type->index, cluster_from_type->name});
 #if 1
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
@@ -1661,7 +1691,7 @@ static e_move_result try_swap(float t,
 
         move_outcome = ABORTED;
 
-        ++aborted_moves[type];
+        ++aborted_moves[type*5 + cluster_from_type->index];
     } else {
         VTR_ASSERT(create_move_outcome == e_create_move::VALID);
 
@@ -1727,7 +1757,7 @@ static e_move_result try_swap(float t,
             /* Update clb data structures since we kept the move. */
             commit_move_blocks(blocks_affected);
 
-            ++accepted_moves[type];
+            ++accepted_moves[type*5 + cluster_from_type->index];
         } else { /* Move was rejected.  */
                  /* Reset the net cost function flags first. */
             reset_move_nets(num_nets_affected);
@@ -1763,7 +1793,7 @@ static e_move_result try_swap(float t,
 */
     if(reward_num == 0){
         move_generator.process_outcome(-1*delta_c);
-        
+
     }
     else if(reward_num == 2 || reward_num == 1 || reward_num ==3 ){
         if(delta_c < 0){
@@ -1952,7 +1982,7 @@ static void update_td_delta_costs(const PlaceDelayModel* delay_model,
             float temp_delay = comp_td_connection_delay(delay_model, net, ipin);
             proposed_connection_delay[net][ipin] = temp_delay;
             float delay_budget;
-            if(timing_cost_func == 0) 
+            if(timing_cost_func == 0)
                 delay_budget = temp_delay/(criticalities.normalized_criticality(net, ipin) + 0.4);
             else
                 delay_budget = 0.7 * temp_delay/(criticalities.normalized_criticality(net, ipin));
@@ -2212,12 +2242,12 @@ static void update_td_costs(const PlaceDelayModel* delay_model, const PlacerCrit
      *
      *      In particular, we can not simply calculate the incremental
      *      delta's caused by changed connection timing costs and adjust
-     *      the timing cost. Due to limited precision, the results of 
+     *      the timing cost. Due to limited precision, the results of
      *      floating point math operations are order dependant and we
      *      would get a different result.
      *
      *      To get around this, we calculate the timing costs hierarchically
-     *      to ensures we calculate the sum with the same order of operations 
+     *      to ensures we calculate the sum with the same order of operations
      *      as comp_td_costs().
      *
      *      See PlacerTimingCosts object used to represent connection_timing_costs

@@ -67,8 +67,8 @@ std::vector<double> time_of_moves (7,0);
 int timing_cost_func;
 
 enum print_info {MOVE_TYPE, XY_RANGES, NONE};
-print_info stats_to_print = XY_RANGES;
-//print_info stats_to_print = MOVE_TYPE;
+//print_info stats_to_print = XY_RANGES;
+print_info stats_to_print = MOVE_TYPE;
 
 using std::max;
 using std::min;
@@ -861,9 +861,9 @@ void try_place(const t_placer_opts& placer_opts,
     std::vector<int> aborted_moves(0);
 
     if(stats_to_print == MOVE_TYPE){
-        num_moves.resize(placer_opts.place_static_move_prob.size()*5,0);
-        accepted_moves.resize(placer_opts.place_static_move_prob.size()*5,0);
-        aborted_moves.resize(placer_opts.place_static_move_prob.size()*5,0);
+        num_moves.resize(placer_opts.place_static_move_prob.size()*10,0);
+        accepted_moves.resize(placer_opts.place_static_move_prob.size()*10,0);
+        aborted_moves.resize(placer_opts.place_static_move_prob.size()*10,0);
     }
     else if(stats_to_print == XY_RANGES){
         num_moves.resize(placer_opts.place_static_move_prob.size()*8,0);
@@ -1180,13 +1180,13 @@ void try_place(const t_placer_opts& placer_opts,
     if(stats_to_print == MOVE_TYPE){
         for(size_t i = 0; i < 7; i++){
             move_name = available_move_types[int(i)];
-            moves = num_moves[5*i] + num_moves[5*i+1] + num_moves[5*i+2] + num_moves[5*i+3] + num_moves[5*i+4];
+            moves = num_moves[10*i] + num_moves[10*i+1] + num_moves[10*i+2] + num_moves[10*i+3] + num_moves[10*i+4] + num_moves[10*i+5] + num_moves[10*i+6] + num_moves[10*i+7] + num_moves[10*i+8] + num_moves[10*i+9];
             VTR_LOG("MOVE TYPE: %17s, %2.2f %%\n", move_name.c_str(), 100*moves/total_moves);
-            for(int j = 0 ; j < 5; j++){
-                if(num_moves[i*5+j] != 0){
-                    moves = num_moves[i*5+j];
-                    accepted = accepted_moves[i*5+j];
-                    aborted = aborted_moves[i*5+j];
+            for(int j = 0 ; j < 10; j++){
+                if(num_moves[i*10+j] != 0){
+                    moves = num_moves[i*10+j];
+                    accepted = accepted_moves[i*10+j];
+                    aborted = aborted_moves[i*10+j];
                     rejected = moves - (accepted + aborted);
                     VTR_LOG("\t Type %d (%s): %2.0f (acc=%2.2f %%, rej=%2.2f %%, aborted=%2.2f %%)\n", j, block_types[j].c_str(), moves, 100*accepted/moves, 100*rejected/moves, 100*aborted/moves);
                 }

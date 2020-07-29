@@ -1713,7 +1713,7 @@ static e_move_result try_swap(float t,
     if(stats_to_print == MOVE_TYPE){
         auto& cluster_ctx = g_vpr_ctx.clustering();
         auto cluster_from_type = cluster_ctx.clb_nlist.block_type(blocks_affected.moved_blocks[0].block_num);
-        ++num_moves[type*5 + cluster_from_type->index];
+        ++num_moves[type*10 + cluster_from_type->index];
         block_types.insert({cluster_from_type->index, cluster_from_type->name});
     }
     else if (stats_to_print == XY_RANGES && blocks_affected.moved_blocks.size() != 0){
@@ -1816,7 +1816,7 @@ static e_move_result try_swap(float t,
             if(stats_to_print == MOVE_TYPE){
                 auto& cluster_ctx = g_vpr_ctx.clustering();
                 auto cluster_from_type = cluster_ctx.clb_nlist.block_type(blocks_affected.moved_blocks[0].block_num);
-                ++accepted_moves[type*5 + cluster_from_type->index];
+                ++accepted_moves[type*10 + cluster_from_type->index];
             }
             else if(stats_to_print == XY_RANGES){
                 ++accepted_moves[type*8 + get_xy_range_index(blocks_affected.moved_blocks[0].old_loc.x, blocks_affected.moved_blocks[0].new_loc.x)];

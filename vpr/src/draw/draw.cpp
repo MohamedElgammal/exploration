@@ -1001,7 +1001,6 @@ static void drawplace(ezgl::renderer* g) {
                 //Determine the block color
                 ezgl::color block_color;
                 t_logical_block_type_ptr logical_block_type = nullptr;
-<<<<<<< HEAD
 
 #    ifdef VTR_ENABLE_DEBUG_LOGGING
                 if (f_placer_debug) {

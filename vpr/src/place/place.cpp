@@ -567,10 +567,7 @@ static void print_place_status(const size_t num_temps,
                                const float std_dev,
                                const float rlim,
                                const float crit_exponent,
-                               size_t tot_moves,
-                               const std::vector<int>& num_moves,
-                               const std::vector<int>& accepted_moves,
-                               const std::vector<int>& aborted_moves);
+                               size_t tot_moves);
 
 static void print_resources_utilization();
 
@@ -651,6 +648,7 @@ void try_place(const t_placer_opts& placer_opts,
     }
 
 //    const size_t avail_moves = 5;
+    int move_lim = 1 ;
     move_lim = (int)(annealing_sched.inner_num * pow(cluster_ctx.clb_nlist.blocks().size(), 1.3333));
 
     if(!placer_opts.simpleRL_agent_placement){
@@ -824,7 +822,6 @@ void try_place(const t_placer_opts& placer_opts,
         print_place(nullptr, nullptr, filename.c_str());
     }
 
-    int move_lim = 1;
     if (placer_opts.effort_scaling == e_place_effort_scaling::CIRCUIT) {
         //This scales the move limit proportional to num_blocks ^ (4/3)
         move_lim = (int)(annealing_sched.inner_num * pow(cluster_ctx.clb_nlist.blocks().size(), 1.3333));
@@ -885,7 +882,11 @@ void try_place(const t_placer_opts& placer_opts,
                                blocks_affected,
                                placer_opts,
                                X_coord,
-                               Y_coord);
+                               Y_coord,
+                               num_moves,
+                               accepted_moves,
+                               aborted_moves,
+                               placer_opts.place_high_fanout_net);
 
     t_annealing_state state;
     init_annealing_state(&state, annealing_sched, first_t, first_rlim, move_lim, first_crit_exponent);
@@ -905,7 +906,12 @@ void try_place(const t_placer_opts& placer_opts,
     print_place_status_header();
 
     //RL agent state definition
-    int state = 1;
+    int agent_state = 1;
+
+
+    std::fill(num_moves.begin(),num_moves.end(),0);
+    std::fill(accepted_moves.begin(),accepted_moves.end(),0);
+    std::fill(aborted_moves.begin(),aborted_moves.end(),0);
 
     /* Outer loop of the simulated annealing begins */
     do {
@@ -924,15 +930,12 @@ void try_place(const t_placer_opts& placer_opts,
                                            pin_timing_invalidator.get(),
                                            timing_info.get());
 
-        std::fill(num_moves.begin(),num_moves.end(),0);
-        std::fill(accepted_moves.begin(),accepted_moves.end(),0);
-        std::fill(aborted_moves.begin(),aborted_moves.end(),0);
 
         timing_bb_factor = timing_bb_factor - TIMING_BB_STEP;
         if(timing_bb_factor < LOW_LIMIT)
             timing_bb_factor = LOW_LIMIT;
 
-        if(state == 1){
+        if(agent_state == 1){
             placement_inner_loop(state.t, num_temps, state.rlim, placer_opts,
                              state.move_lim, state.crit_exponent, inner_recompute_limit, &stats,
                              &costs,
@@ -983,7 +986,7 @@ void try_place(const t_placer_opts& placer_opts,
         }
 
 #ifdef VTR_ENABLE_DEBUG_LOGGING
-        print_place_statisitics(num_temps, t,num_moves,accepted_moves,aborted_moves);
+        print_place_statisitics(num_temps, state.t,num_moves,accepted_moves,aborted_moves);
 #endif
 
         print_place_status(num_temps,
@@ -991,10 +994,9 @@ void try_place(const t_placer_opts& placer_opts,
                            state.t, state.alpha,
                            stats,
                            critical_path.delay(), sTNS, sWNS,
-                           success_rat, std_dev, rlim, crit_exponent, tot_iter);
-        float alph  = t/oldt;
-        if(state == 1 && alph < 0.85 && alph > 0.6){
-            state = 2;
+                           success_rat, std_dev, state.rlim, state.crit_exponent, tot_iter);
+        if(agent_state == 1 && state.alpha < 0.85 && state.alpha > 0.6){
+            agent_state = 2;
             VTR_LOG("Second state: \n");
         }
 //,num_moves);
@@ -1050,7 +1052,6 @@ void try_place(const t_placer_opts& placer_opts,
                              aborted_moves,
                              timing_bb_factor);
 
-        oldt = state.t;
 
         tot_iter += move_lim;
         ++num_temps;
@@ -1176,7 +1177,7 @@ void try_place(const t_placer_opts& placer_opts,
 
     VTR_LOG("update_td_costs: connections %g nets %g sum_nets %g total %g\n", f_update_td_costs_connections_elapsed_sec, f_update_td_costs_nets_elapsed_sec, f_update_td_costs_sum_nets_elapsed_sec, f_update_td_costs_total_elapsed_sec);
 
-#if 1
+#if 0
     //measure time of each move type
     VTR_LOG("time of uniform move = %f \n", time_of_moves[0]/num_of_moves[0]);
     VTR_LOG("time of median move = %f \n", time_of_moves[1]/num_of_moves[0]);
@@ -1686,14 +1687,14 @@ static e_move_result try_swap(float t,
     }
 
     //Generate a new move (perturbation) used to explore the space of possible placements
-#if 1
+#if 0
     auto start = std::chrono::high_resolution_clock::now();
 #endif
     e_create_move create_move_outcome = move_generator.propose_move(blocks_affected
       , rlim, X_coord, Y_coord, type, high_fanout_net, criticalities);
 
     ++num_moves[type];
-#if 1
+#if 0
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 
@@ -3399,6 +3400,7 @@ void stop_placement_and_check_breakopints(t_pl_blocks_to_be_moved& blocks_affect
 
         update_screen(ScreenUpdatePriority::MAJOR, msg.c_str(), PLACEMENT, nullptr);
     }
+#endif
 
 #ifdef VTR_ENABLE_DEBUG_LOGGING
 void print_place_statisitics(const int &temp_nums, const float &t, const std::vector<int> & num_moves, const std::vector<int> & accepted_moves, const std::vector<int> &){

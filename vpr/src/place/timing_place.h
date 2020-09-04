@@ -8,7 +8,6 @@
 #include "vpr_net_pins_matrix.h"
 
 //const float HIGH_CRIT = 0.7;
-extern float crit_limit;
 extern std::vector<std::pair<ClusterNetId, int>> highly_crit_pins;
 extern std::unordered_set<ClusterBlockId> highly_crit_blocks;
 
@@ -73,7 +72,7 @@ class PlacerCriticalities {
   public: //Modifiers
     //Incrementally updates criticalities based on the atom netlist criticalitites provied by
     //timing_info and the provided criticality_exponent.
-    void update_criticalities(const SetupTimingInfo* timing_info, float criticality_exponent);
+    void update_criticalities(const SetupTimingInfo* timing_info, float criticality_exponent, float crit_limit);
 
     //Override the criticality of a particular connection
     void set_criticality(ClusterNetId net, int ipin, float val);

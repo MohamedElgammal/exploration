@@ -12,8 +12,6 @@
 extern bool f_placer_debug;
 #endif
 
-extern int dm_rlim;
-extern e_agent_algorithm agent_algorithm;
 extern vtr::vector<ClusterNetId, t_bb> bb_coords, bb_num_on_edges;
 
 /* This is for the placement swap routines. A swap attempt could be       *
@@ -23,6 +21,17 @@ enum e_move_result {
     REJECTED,
     ACCEPTED,
     ABORTED
+};
+
+//This is to list all the abailable moves
+enum class e_move_type {
+    UNIFORM,
+    MEDIAN,
+    W_CENTROID,
+    CENTROID,
+    W_MEDIAN,
+    CRIT_UNIFORM,
+    FEASIBLE_REGION 
 };
 
 enum class e_create_move {
@@ -70,7 +79,9 @@ bool find_to_loc_centroid(t_logical_block_type_ptr type,
                          float rlim,
                          const t_pl_loc from,
                          const t_pl_loc centeroid,
-                         t_pl_loc& to);
+                         t_pl_loc& to,
+                         int dm_rlim);
 
+std::string move_type_to_string (e_move_type);
 
 #endif

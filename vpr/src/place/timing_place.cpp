@@ -32,7 +32,7 @@ PlacerCriticalities::PlacerCriticalities(const ClusteredNetlist& clb_nlist, cons
 }
 
 /**************************************/
-void PlacerCriticalities::update_criticalities(const SetupTimingInfo* timing_info, float crit_exponent) {
+void PlacerCriticalities::update_criticalities(const SetupTimingInfo* timing_info, float crit_exponent, float crit_limit) {
     /* Performs a 1-to-1 mapping from criticality to timing_place_crit_.
      * For every pin on every net (or, equivalently, for every tedge ending
 <<<<<<< HEAD

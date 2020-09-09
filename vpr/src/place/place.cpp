@@ -56,8 +56,8 @@
 #endif
 
 //define the reward function factor constants
-#define HI_LIMIT 0.8
-#define LOW_LIMIT 0.2
+#define HI_LIMIT 0.8 
+#define LOW_LIMIT 0.5
 #define TIMING_BB_STEP 0.005
 
 //Used to measure the execution time of different move types
@@ -74,7 +74,7 @@ std::vector<double> time_of_moves (7,0);
 #include "draw_color.h"
 #endif
 
-//int timing_cost_func;
+int timing_cost_func;
 
 using std::max;
 using std::min;
@@ -583,7 +583,7 @@ void try_place(const t_placer_opts& placer_opts,
         auto& timing_ctx = g_vpr_ctx.timing();
         auto pre_place_timing_stats = timing_ctx.stats;
 
-    //timing_cost_func = placer_opts.place_timing_cost_func;
+    timing_cost_func = placer_opts.place_timing_cost_func;
     //reward_num = placer_opts.place_reward_num;
 
     int tot_iter, moves_since_cost_recompute, width_fac, num_connections,
@@ -914,11 +914,11 @@ void try_place(const t_placer_opts& placer_opts,
                                            pin_timing_invalidator.get(),
                                            timing_info.get());
 
-
+        /*
         timing_bb_factor = timing_bb_factor - TIMING_BB_STEP;
         if(timing_bb_factor < LOW_LIMIT)
             timing_bb_factor = LOW_LIMIT;
-
+        */
         if(agent_state == 1){
             placement_inner_loop(state.t, num_temps, state.rlim, placer_opts,
                              state.move_lim, state.crit_exponent, inner_recompute_limit, &stats,
@@ -1966,14 +1966,17 @@ static void update_td_delta_costs(const PlaceDelayModel* delay_model,
         for (size_t ipin = 1; ipin < cluster_ctx.clb_nlist.net_pins(net).size(); ipin++) {
             float temp_delay = comp_td_connection_delay(delay_model, net, ipin);
             proposed_connection_delay[net][ipin] = temp_delay;
-            /*
+            
             float delay_budget;
             if(timing_cost_func == 0)
                 delay_budget = temp_delay/(criticalities.normalized_criticality(net, ipin) + 0.4);
-            else
+            else if(timing_cost_func == 1)
                 delay_budget = 0.7 * temp_delay/(criticalities.normalized_criticality(net, ipin));
-            */
-            proposed_connection_timing_cost[net][ipin] = criticalities.criticality(net, ipin) * temp_delay ;
+            else
+                delay_budget = 0;
+           
+            //proposed_connection_timing_cost[net][ipin] = criticalities.criticality(net, ipin) * temp_delay ;
+            proposed_connection_timing_cost[net][ipin] = criticalities.criticality(net, ipin) * max(float(0),temp_delay - delay_budget) ;
             delta_timing_cost += proposed_connection_timing_cost[net][ipin] - connection_timing_cost[net][ipin];
 
             ClusterPinId sink_pin = cluster_ctx.clb_nlist.net_pin(net, ipin);
@@ -1994,14 +1997,16 @@ static void update_td_delta_costs(const PlaceDelayModel* delay_model,
 
             float temp_delay = comp_td_connection_delay(delay_model, net, net_pin);
             proposed_connection_delay[net][net_pin] = temp_delay;
-            /*
+            
             float delay_budget;
             if(timing_cost_func == 0)
                 delay_budget = temp_delay/(criticalities.normalized_criticality(net, net_pin) + 0.4);
-            else
+            else if(timing_cost_func == 1)
                 delay_budget = 0.7 * temp_delay/(criticalities.normalized_criticality(net, net_pin));
-            */
-            proposed_connection_timing_cost[net][net_pin] = criticalities.criticality(net, net_pin) * temp_delay ;
+            else
+                delay_budget = 0;
+            
+            proposed_connection_timing_cost[net][net_pin] = criticalities.criticality(net, net_pin) * max(float(0), temp_delay - delay_budget);
             delta_timing_cost += proposed_connection_timing_cost[net][net_pin] - connection_timing_cost[net][net_pin];
 
             blocks_affected.affected_pins.push_back(pin);
@@ -2326,14 +2331,16 @@ static double comp_td_connection_cost(const PlaceDelayModel* delay_model, const 
 
     VTR_ASSERT_SAFE_MSG(connection_delay[net][ipin] == comp_td_connection_delay(delay_model, net, ipin),
                         "Connection delays should already be updated");
-    /*
+    
     float delay_budget;
     if(timing_cost_func == 0)
         delay_budget = connection_delay[net][ipin]/(place_crit.normalized_criticality(net, ipin) + 0.4);
-    else
+    else if(timing_cost_func == 1)
         delay_budget = 0.7 * connection_delay[net][ipin]/(place_crit.normalized_criticality(net, ipin));
-    */
-    double conn_timing_cost = place_crit.criticality(net, ipin) * connection_delay[net][ipin] ;
+    else
+        delay_budget = 0;
+    
+    double conn_timing_cost = place_crit.criticality(net, ipin) * max(float(0), connection_delay[net][ipin] - delay_budget);
 
     VTR_ASSERT_SAFE_MSG(std::isnan(proposed_connection_delay[net][ipin]),
                         "Propsoed connection delay should already be invalidated");
@@ -3380,7 +3387,7 @@ void stop_placement_and_check_breakopints(t_pl_blocks_to_be_moved& blocks_affect
         f_place_debug = false;
 
     if (f_place_debug && draw_state->show_graphics) {
-        std::string msg = move_type_to_string(0);
+        std::string msg = move_type_to_string(e_move_type(0));
         if (move_outcome == 0)
             msg += vtr::string_fmt(", Rejected");
         else if (move_outcome == 1)

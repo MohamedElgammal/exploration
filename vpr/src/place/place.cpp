@@ -591,6 +591,7 @@ void try_place(const t_placer_opts& placer_opts,
     HI_LIMIT = placer_opts.place_S_HI_LIMIT;
     LOW_LIMIT = placer_opts.place_S_LOW_LIMIT;
     new_rlim = placer_opts.place_new_rlim;
+    VTR_ASSERT_MSG(HILIMIT >= LOW_LIMIT, "low limit should be less than high limit of S");
     //reward_num = placer_opts.place_reward_num;
 
     int tot_iter, moves_since_cost_recompute, width_fac, num_connections,
@@ -921,11 +922,11 @@ void try_place(const t_placer_opts& placer_opts,
                                            pin_timing_invalidator.get(),
                                            timing_info.get());
 
-        /*
+        
         timing_bb_factor = timing_bb_factor - TIMING_BB_STEP;
         if(timing_bb_factor < LOW_LIMIT)
             timing_bb_factor = LOW_LIMIT;
-        */
+        
         if(agent_state == 1){
             placement_inner_loop(state.t, num_temps, state.rlim, placer_opts,
                              state.move_lim, state.crit_exponent, inner_recompute_limit, &stats,

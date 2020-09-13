@@ -986,12 +986,12 @@ void try_place(const t_placer_opts& placer_opts,
                            stats,
                            critical_path.delay(), sTNS, sWNS,
                            success_rat, std_dev, state.rlim, state.crit_exponent, tot_iter);
-        /*
+        
         if(agent_state == 1 && state.alpha < 0.85 && state.alpha > 0.6){
             agent_state = 2;
             VTR_LOG("Second state: \n");
         }
-        */
+        
 //,num_moves);
 //,accepted_moves,aborted_moves);
 

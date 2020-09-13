@@ -13,6 +13,7 @@ extern bool f_placer_debug;
 #endif
 
 extern vtr::vector<ClusterNetId, t_bb> bb_coords, bb_num_on_edges;
+extern float new_rlim;
 
 /* This is for the placement swap routines. A swap attempt could be       *
  * rejected, accepted or aborted (due to the limitations placed on the    *

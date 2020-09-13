@@ -123,6 +123,11 @@ struct t_options {
     argparse::ArgValue<int> place_timing_cost_func;
     argparse::ArgValue<float> place_crit_limit;
 
+    argparse::ArgValue<int> place_num_moves;
+    argparse::ArgValue<float> place_S_HI_LIMIT;
+    argparse::ArgValue<float> place_S_LOW_LIMIT;
+    argparse::ArgValue<float> place_new_rlim;
+
     /* Timing-driven placement options only */
     argparse::ArgValue<float> PlaceTimingTradeoff;
     argparse::ArgValue<int> RecomputeCritIter;

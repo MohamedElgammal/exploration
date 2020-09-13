@@ -1816,6 +1816,31 @@ argparse::ArgumentParser create_arg_parser(std::string prog_name, t_options& arg
         .show_in(argparse::ShowIn::HELP_ONLY);
 
 
+    place_grp.add_argument(args.place_num_moves, "--place_num_moves")
+        .help(
+            "Number of the available move types")
+        .default_value("4")
+        .show_in(argparse::ShowIn::HELP_ONLY);
+
+    place_grp.add_argument(args.place_crit_limit, "--place_S_HI_LIMIT")
+        .help(
+            "S high limit value")
+        .default_value("0.8")
+        .show_in(argparse::ShowIn::HELP_ONLY);
+
+    place_grp.add_argument(args.place_crit_limit, "--place_S_LOW_LIMIT")
+        .help(
+            "S low limit value")
+        .default_value("0.8")
+        .show_in(argparse::ShowIn::HELP_ONLY);
+
+    place_grp.add_argument(args.place_crit_limit, "--place_new_rlim")
+        .help(
+            "Move to the new range limit algorithm when the current range limit equal to this percentage of the initial rlim")
+        .default_value("0.15")
+        .show_in(argparse::ShowIn::HELP_ONLY);
+
+
     auto& place_timing_grp = parser.add_argument_group("timing-driven placement options");
 
     place_timing_grp.add_argument(args.PlaceTimingTradeoff, "--timing_tradeoff")

@@ -1,6 +1,9 @@
 #include "place_util.h"
 #include "globals.h"
 
+//Placement Checkpoint 
+placement_checkpoint place_cp;
+
 static vtr::Matrix<t_grid_blocks> init_grid_blocks();
 
 void init_placement_context() {
@@ -28,4 +31,23 @@ static vtr::Matrix<t_grid_blocks> init_grid_blocks() {
     }
 
     return grid_blocks;
+}
+
+float get_cp_cpd() {return place_cp.cpd;}
+double get_cp_bb_cost() {return place_cp.bb_cost;}
+bool cp_is_valid() {return place_cp.valid;}
+
+void save_placement(){
+    auto& place_ctx = g_vpr_ctx.placement();
+    place_cp.block_locs  = place_ctx.block_locs;
+    place_cp.physical_pins = place_ctx.physical_pins;
+    place_cp.grid_blocks = place_ctx.grid_blocks;
+    place_cp.valid = true;
+}
+
+void restore_placement(){
+    auto& mutable_place_ctx = g_vpr_ctx.mutable_placement();
+    mutable_place_ctx.block_locs = place_cp.block_locs;
+    mutable_place_ctx.physical_pins = place_cp.physical_pins;
+    mutable_place_ctx.grid_blocks = place_cp.grid_blocks;
 }
